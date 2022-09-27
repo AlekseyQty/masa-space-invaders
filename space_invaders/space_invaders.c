@@ -13,6 +13,12 @@
 
 #define PLAYER_SPEED 4
 
+#define ENEMY_MAX_SIZE 100
+#define ENEMY_MIN_SIZE 60
+#define ENEMY_MAX_SPEED 4
+#define ENEMY_MIN_SPEED 1
+#define ENEMY_SPAWN_RATE 50
+
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 HWND                InitInstance(HINSTANCE, int);
@@ -41,21 +47,35 @@ typedef struct SObject {
 	TPoint size;
 	COLORREF brush;
 	TPoint speed;
-} TObject;
+	char oType;
+	BOOL isDel;
+} TObject, *PObject;
 
 // Declarations
 RECT rct;
 RECT windowRect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
 TObject player;
+PObject mas = NULL;
 BOOL isGameRunning = TRUE;
+int objectCount = 0;
+
+
 
 // Functionds
 
-void initObject(TObject* obj, float xPos, float yPos, float width, float height) {
+BOOL objectCollision(TObject o1, TObject o2) {
+	return ((o1.pos.x + o1.size.x) > o2.pos.x) && (o1.pos.x < (o2.pos.x + o2.size.x)) &&
+		((o1.pos.y + o1.size.y) > o2.pos.y) && (o1.pos.y < (o2.pos.y + o2.size.y));
+}
+
+void initObject(TObject* obj, float xPos, float yPos, float width, float height, char objType, TPoint speed) {
 	obj->pos = point(xPos, yPos);
 	obj->size = point(width, height);
-	obj->brush = RGB(0, 255, 0);
-	obj->speed = point(0, 0);
+	obj->speed = speed;
+	obj->oType = objType;
+	if (objType == 'p') obj->brush = RGB(0, 255, 0);
+	if (objType == 'e') obj->brush = RGB(255, 0, 0);
+	obj->isDel = FALSE;
 }
 
 void showObject(TObject obj, HDC dc) {
@@ -67,7 +87,7 @@ void showObject(TObject obj, HDC dc) {
 	Rectangle(dc, (int)(obj.pos.x), (int)(obj.pos.y), (int)(obj.pos.x + obj.size.x), (int)(obj.pos.y + obj.size.y));
 }
 
-void moveObject(TObject* obj) {
+void movePlayer(TObject* obj) {
 	obj->pos.x += obj->speed.x;
 	obj->pos.y += obj->speed.y;
 	if (obj->pos.x <= 0) obj->pos.x = 0;
@@ -76,8 +96,54 @@ void moveObject(TObject* obj) {
 	if (obj->pos.y + obj->size.y >= WINDOW_HEIGHT) obj->pos.y = WINDOW_HEIGHT - obj->size.y;
 }
 
+void moveEnemy(TObject* obj) {
+	obj->pos.y += obj->speed.y;
+
+	if (obj->pos.y > WINDOW_HEIGHT + ENEMY_MAX_SIZE + 10) {
+		obj->isDel = TRUE;
+	}
+}
+
+
+PObject newObject() {
+	objectCount++;
+	mas = realloc(mas, sizeof(*mas) * objectCount);
+	return mas + objectCount - 1;
+}
+
+void delObjects() {
+	int i = 0;
+	while (i < objectCount)
+	{
+		if (mas[i].isDel) {
+			objectCount--;
+			mas[i] = mas[objectCount];
+			mas = realloc(mas, sizeof(*mas) * objectCount);
+		}
+		else
+			i++;
+	}
+}
+
+void createEnemy() {
+	// Random range formula: num = (rand() % (upper – lower + 1)) + lower 
+	float enemySpeed = (rand() % (ENEMY_MAX_SPEED - ENEMY_MIN_SPEED + 1)) + ENEMY_MIN_SPEED;
+	float enemyWidth = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
+	float enemyHeight = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
+	float startLocation = (rand() % (WINDOW_WIDTH - (int)enemyWidth + 1));
+	initObject(newObject(), startLocation, -100, enemyWidth, enemyHeight, 'e', point(0, enemySpeed));
+}
+
+void generateEnemy() {
+	int spawnRate = rand() % ENEMY_SPAWN_RATE;
+
+	if (spawnRate == 1) {
+		createEnemy();
+	}
+}
+
 void gameInit() {
-	initObject(&player, 100, 100, 40, 40);
+	initObject(&player, 100, 100, 40, 40, 'p', point(0,0));
 }
 
 void playerControl() {
@@ -95,7 +161,16 @@ void playerControl() {
 
 void winMove() {
 	playerControl();
-	moveObject(&player);
+	movePlayer(&player);
+	generateEnemy();
+	for (int i = 0; i < objectCount; i++) {
+		moveEnemy(mas + i);
+		if (objectCollision(player, mas[i])) {
+			mas[i].isDel = TRUE;
+		}
+	}
+
+	delObjects();
 }
 
 void updateWindow(HDC dc) {
@@ -106,64 +181,17 @@ void updateWindow(HDC dc) {
 	SelectObject(memDC, CreateSolidBrush(RGB(255, 255, 255)));
 	Rectangle(memDC, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-	//SelectObject(memDC, CreateSolidBrush(RGB(250, 150, 150)));
-	//Rectangle(memDC, player.left, player.top, player.right, player.bottom);
 	showObject(player, memDC);
+
+	for (int i = 0; i < objectCount; i++) {
+		showObject(mas[i], memDC);
+	}
 
 	// Copy from Memory Device Context to Device Context
 	BitBlt(dc, 0, 0, rct.right - rct.left, rct.bottom - rct.top, memDC, 0, 0, SRCCOPY);
 	DeleteDC(memDC);
 	DeleteObject(memBM);
 }
-
-
-//void initPlayer(HDC dc) {
-//	srand(time(NULL));
-//
-//	player.left = rand() % WINDOW_WIDTH;
-//	player.top = rand() % WINDOW_HEIGHT;
-//	player.right = player.left + 100;
-//	player.bottom = player.top + 100;
-//
-//	SelectObject(dc, CreateSolidBrush(RGB(250, 150, 150)));
-//	Rectangle(dc, player.left, player.top, player.right, player.bottom);
-//}
-//
-//void movePlayerRight() {
-//	player.right += PLAYER_SPEED;
-//	if (player.right >= WINDOW_WIDTH) {
-//		player.right = 100;
-//	}
-//	player.left = player.right - 100;
-//}
-//
-//void movePlayerLeft() {
-//	player.left -= PLAYER_SPEED;
-//	if (player.left <= 0) {
-//		player.left = WINDOW_WIDTH-100;
-//	}
-//	player.right = player.left + 100;
-//	//player.bottom = player.top + 100;
-//}
-//
-//void movePlayerDown() {
-//	player.top += PLAYER_SPEED;
-//	if (player.top > WINDOW_HEIGHT) {
-//		player.top = -100;
-//	}
-//	player.bottom = player.top + 100;
-//}
-//
-//void movePlayerUp() {
-//	player.top -= PLAYER_SPEED;
-//	if (player.top < -100) {
-//		player.top = WINDOW_HEIGHT;
-//	}
-//	player.bottom = player.top + 100;
-//}
-
-
-// Main code
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -180,6 +208,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 	LoadStringW(hInstance, IDC_SPACEINVADERS, szWindowClass, MAX_LOADSTRING);
 	MyRegisterClass(hInstance);
+
+	srand(time(NULL));
 
 	HWND hWnd = InitInstance(hInstance, nCmdShow);
 	// Perform application initialization:
