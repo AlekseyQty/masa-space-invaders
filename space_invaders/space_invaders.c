@@ -58,6 +58,7 @@ TObject player;
 PObject mas = NULL;
 BOOL isGameRunning = TRUE;
 int objectCount = 0;
+int score = 0;
 
 
 
@@ -83,6 +84,11 @@ void showObject(TObject obj, HDC dc) {
 	SetDCPenColor(dc, RGB(0, 0, 0));
 	SelectObject(dc, GetStockObject(DC_BRUSH));
 	SetDCBrushColor(dc, obj.brush);
+
+	// Update score
+	char output[10];
+	snprintf(output, 10, "%d", score);
+	TextOutA(dc, 50, 20, output, lstrlenA(output));
 
 	Rectangle(dc, (int)(obj.pos.x), (int)(obj.pos.y), (int)(obj.pos.x + obj.size.x), (int)(obj.pos.y + obj.size.y));
 }
@@ -119,6 +125,7 @@ void delObjects() {
 			objectCount--;
 			mas[i] = mas[objectCount];
 			mas = realloc(mas, sizeof(*mas) * objectCount);
+			score++;
 		}
 		else
 			i++;
