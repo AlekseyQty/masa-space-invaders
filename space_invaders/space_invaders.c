@@ -8,71 +8,95 @@
 
 #define MAX_LOADSTRING 100
 
-// Custom definitions
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 
 #define PLAYER_SPEED 4
+
+// Forward declarations of functions included in this code module:
+ATOM                MyRegisterClass(HINSTANCE hInstance);
+HWND                InitInstance(HINSTANCE, int);
+LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
+typedef struct sPoint {
+	float x, y;
+} TPoint;
 
-// My declarations
-RECT player;
+TPoint point(float x, float y) {
+	TPoint pt;
+	pt.x = x;
+	pt.y = y;
+
+	return pt;
+}
+
+typedef struct SObject {
+	TPoint pos;
+	TPoint size;
+	COLORREF brush;
+	TPoint speed;
+} TObject;
+
+// Declarations
 RECT rct;
+RECT windowRect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+TObject player;
 BOOL isGameRunning = TRUE;
 
-// My functionds
+// Functionds
 
-void initPlayer(HDC dc) {
-	srand(time(NULL));
-
-	player.left = rand() % WINDOW_WIDTH;
-	player.top = rand() % WINDOW_HEIGHT;
-	player.right = player.left + 100;
-	player.bottom = player.top + 100;
-
-	SelectObject(dc, CreateSolidBrush(RGB(250, 150, 150)));
-	Rectangle(dc, player.left, player.top, player.right, player.bottom);
+void initObject(TObject* obj, float xPos, float yPos, float width, float height) {
+	obj->pos = point(xPos, yPos);
+	obj->size = point(width, height);
+	obj->brush = RGB(0, 255, 0);
+	obj->speed = point(0, 0);
 }
 
-void movePlayerRight() {
-	player.right += PLAYER_SPEED;
-	if (player.right >= WINDOW_WIDTH) {
-		player.right = 100;
+void showObject(TObject obj, HDC dc) {
+	SelectObject(dc, GetStockObject(DC_PEN));
+	SetDCPenColor(dc, RGB(0, 0, 0));
+	SelectObject(dc, GetStockObject(DC_BRUSH));
+	SetDCBrushColor(dc, obj.brush);
+
+	Rectangle(dc, (int)(obj.pos.x), (int)(obj.pos.y), (int)(obj.pos.x + obj.size.x), (int)(obj.pos.y + obj.size.y));
+}
+
+void moveObject(TObject* obj) {
+	obj->pos.x += obj->speed.x;
+	obj->pos.y += obj->speed.y;
+	if (obj->pos.x <= 0) obj->pos.x = 0;
+	if (obj->pos.x + obj->size.x >= WINDOW_WIDTH) obj->pos.x = WINDOW_WIDTH - obj->size.x;
+	if (obj->pos.y <= 0) obj->pos.y = 0;
+	if (obj->pos.y + obj->size.y >= WINDOW_HEIGHT) obj->pos.y = WINDOW_HEIGHT - obj->size.y;
+}
+
+void gameInit() {
+	initObject(&player, 100, 100, 40, 40);
+}
+
+void playerControl() {
+	player.speed.x = 0;
+	player.speed.y = 0;
+
+	if (GetAsyncKeyState('W') < 0) player.speed.y -= PLAYER_SPEED;
+	if (GetAsyncKeyState('S') < 0) player.speed.y = PLAYER_SPEED;
+	if (GetAsyncKeyState('A') < 0) player.speed.x -= PLAYER_SPEED;
+	if (GetAsyncKeyState('D') < 0) player.speed.x = PLAYER_SPEED;
+	if ((player.speed.x != 0) && (player.speed.y != 0)) {
+		player.speed = point(player.speed.x * 0.7, player.speed.y = player.speed.y * 0.7);
 	}
-	player.left = player.right - 100;
 }
 
-void movePlayerLeft() {
-	player.left -= PLAYER_SPEED;
-	if (player.left <= 0) {
-		player.left = WINDOW_WIDTH-100;
-	}
-	player.right = player.left + 100;
-	//player.bottom = player.top + 100;
+void winMove() {
+	playerControl();
+	moveObject(&player);
 }
-
-void movePlayerDown() {
-	player.top += PLAYER_SPEED;
-	if (player.top > WINDOW_HEIGHT) {
-		player.top = -100;
-	}
-	player.bottom = player.top + 100;
-}
-
-void movePlayerUp() {
-	player.top -= PLAYER_SPEED;
-	if (player.top < -100) {
-		player.top = WINDOW_HEIGHT;
-	}
-	player.bottom = player.top + 100;
-}
-
-
 
 void updateWindow(HDC dc) {
 	HDC memDC = CreateCompatibleDC(dc);
@@ -82,8 +106,9 @@ void updateWindow(HDC dc) {
 	SelectObject(memDC, CreateSolidBrush(RGB(255, 255, 255)));
 	Rectangle(memDC, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-	SelectObject(memDC, CreateSolidBrush(RGB(250, 150, 150)));
-	Rectangle(memDC, player.left, player.top, player.right, player.bottom);
+	//SelectObject(memDC, CreateSolidBrush(RGB(250, 150, 150)));
+	//Rectangle(memDC, player.left, player.top, player.right, player.bottom);
+	showObject(player, memDC);
 
 	// Copy from Memory Device Context to Device Context
 	BitBlt(dc, 0, 0, rct.right - rct.left, rct.bottom - rct.top, memDC, 0, 0, SRCCOPY);
@@ -91,11 +116,55 @@ void updateWindow(HDC dc) {
 	DeleteObject(memBM);
 }
 
-// Forward declarations of functions included in this code module:
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-HWND                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+//void initPlayer(HDC dc) {
+//	srand(time(NULL));
+//
+//	player.left = rand() % WINDOW_WIDTH;
+//	player.top = rand() % WINDOW_HEIGHT;
+//	player.right = player.left + 100;
+//	player.bottom = player.top + 100;
+//
+//	SelectObject(dc, CreateSolidBrush(RGB(250, 150, 150)));
+//	Rectangle(dc, player.left, player.top, player.right, player.bottom);
+//}
+//
+//void movePlayerRight() {
+//	player.right += PLAYER_SPEED;
+//	if (player.right >= WINDOW_WIDTH) {
+//		player.right = 100;
+//	}
+//	player.left = player.right - 100;
+//}
+//
+//void movePlayerLeft() {
+//	player.left -= PLAYER_SPEED;
+//	if (player.left <= 0) {
+//		player.left = WINDOW_WIDTH-100;
+//	}
+//	player.right = player.left + 100;
+//	//player.bottom = player.top + 100;
+//}
+//
+//void movePlayerDown() {
+//	player.top += PLAYER_SPEED;
+//	if (player.top > WINDOW_HEIGHT) {
+//		player.top = -100;
+//	}
+//	player.bottom = player.top + 100;
+//}
+//
+//void movePlayerUp() {
+//	player.top -= PLAYER_SPEED;
+//	if (player.top < -100) {
+//		player.top = WINDOW_HEIGHT;
+//	}
+//	player.bottom = player.top + 100;
+//}
+
+
+// Main code
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -126,7 +195,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	// Main message loop:
 	OutputDebugString(L"GAME INIT\n");
-	initPlayer(dc);
+	//initPlayer(dc);
+	gameInit();
 
 	while (isGameRunning)
 	{
@@ -141,18 +211,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			if (GetKeyState(VK_ESCAPE) < 0) {
 				isGameRunning = FALSE;
 			}
-			if (GetAsyncKeyState(VK_RIGHT) < 0) {
-				movePlayerRight();
-			}
-			if (GetAsyncKeyState(VK_LEFT) < 0) {
-				movePlayerLeft();
-			}
-			if (GetAsyncKeyState(VK_UP) < 0) {
-				movePlayerUp();
-			}
-			if (GetAsyncKeyState(VK_DOWN) < 0) {
-				movePlayerDown();
-			}
+			winMove();
 			updateWindow(dc);
 			Sleep(5);
 		}
@@ -204,8 +263,11 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	hInst = hInstance; // Store instance handle in our global variable
 
+	// Adjust window due to menus/borders taking some space
+	AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, TRUE);
+
 	HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-		10, 10, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
+		10, 10, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, NULL, NULL, hInstance, NULL);
 
 	if (!hWnd)
 	{
