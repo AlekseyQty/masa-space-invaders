@@ -2,6 +2,8 @@
 #include "resource.h"
 #include "object.h"
 #include "helpers.h"
+#include "player.h"
+#include "enemy.h"
 #include "constants.h"
 #include "stdio.h"
 #include <time.h>
@@ -21,7 +23,7 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 RECT rct;
 RECT windowRect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
 TObject player;
-PObject mas = NULL;
+PObject obj_array = NULL;
 BOOL isGameRunning = TRUE;
 int objectCount = 0;
 int score = 0;
@@ -33,6 +35,8 @@ int score = 0;
 
 void gameInit() {
 	initObject(&player, 100, 100, 40, 40, 'p', point(0,0));
+	createEnemy(&obj_array, &objectCount, sizeof(*obj_array));
+	createEnemy(&obj_array, &objectCount, sizeof(*obj_array));
 }
 
 void playerControl() {
@@ -51,15 +55,15 @@ void playerControl() {
 void winMove() {
 	playerControl();
 	movePlayer(&player);
-	generateEnemy();
+	//generateEnemy(&obj_array, &objectCount, sizeof(*obj_array));
 	for (int i = 0; i < objectCount; i++) {
-		moveEnemy(mas + i);
-		if (objectCollision(player, mas[i])) {
-			mas[i].isDel = TRUE;
-		}
+		moveEnemy(obj_array + i);
+		//if (objectCollision(player, obj_array[i])) {
+		//	obj_array[i].isDel = TRUE;
+		//}
 	}
 
-	delObjects();
+	//delObjects(&mas, &objectCount);
 }
 
 void updateWindow(HDC dc) {
@@ -74,7 +78,7 @@ void updateWindow(HDC dc) {
 	updateScore(memDC, score);
 
 	for (int i = 0; i < objectCount; i++) {
-		showObject(mas[i], memDC);
+		showObject(obj_array[i], memDC);
 	}
 
 	// Copy from Memory Device Context to Device Context

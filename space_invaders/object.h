@@ -1,5 +1,10 @@
 #pragma once
 #include "framework.h"
+#include "constants.h"
+#include "stdio.h"
+
+//extern PObject obj_array;
+//extern int objectCount;
 
 typedef struct sPoint {
 	float x, y;
@@ -20,7 +25,7 @@ typedef struct SObject {
 	TPoint speed;
 	char oType;
 	BOOL isDel;
-} TObject, * PObject;
+} TObject, *PObject;
 
 
 void initObject(TObject* obj, float xPos, float yPos, float width, float height, char objType, TPoint speed) {
@@ -43,14 +48,12 @@ void showObject(TObject obj, HDC dc) {
 	Rectangle(dc, (int)(obj.pos.x), (int)(obj.pos.y), (int)(obj.pos.x + obj.size.x), (int)(obj.pos.y + obj.size.y));
 }
 
-PObject newObject(PObject mas, int* objectCount) {
-	objectCount++;
-	realloc(mas, sizeof(*mas) * *objectCount);
-	return mas + *objectCount - 1;
+PObject newObject(PObject **obj_array, int *objectCount, int structSize) {
+	(*objectCount)++;
+	*obj_array = realloc(*obj_array, structSize * (*objectCount));
+	return (*obj_array) + (*objectCount) - 1;
 }
 
-
-// TODO: Move from object
 void updateScore(HDC dc, int score) {
 	// Update score
 	char output[10];
@@ -58,15 +61,15 @@ void updateScore(HDC dc, int score) {
 	TextOutA(dc, 50, 20, output, lstrlenA(output));
 }
 
-void delObjects() {
+void delObjects(PObject* obj_array, int* objectCount) {
 	int i = 0;
 	while (i < objectCount)
 	{
-		if (mas[i].isDel) {
+		if ((*obj_array)[i].isDel) {
 			objectCount--;
-			mas[i] = mas[objectCount];
-			mas = realloc(mas, sizeof(*mas) * objectCount);
-			score++;
+			obj_array[i] = obj_array[(*objectCount)];
+			obj_array = realloc(obj_array, sizeof(*obj_array) * (*objectCount));
+			//score++;
 		}
 		else
 			i++;

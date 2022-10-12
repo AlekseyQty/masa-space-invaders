@@ -1,4 +1,5 @@
 #pragma once
+#include "object.h"
 
 #define ENEMY_MAX_SIZE 100
 #define ENEMY_MIN_SIZE 60
