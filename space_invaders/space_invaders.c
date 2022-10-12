@@ -1,23 +1,10 @@
-// space_invaders.cpp : Defines the entry point for the application.
-//
-
 #include "framework.h"
-#include "space_invaders.h"
+#include "resource.h"
+#include "object.h"
+#include "helpers.h"
+#include "constants.h"
 #include "stdio.h"
 #include <time.h>
-
-#define MAX_LOADSTRING 100
-
-#define WINDOW_WIDTH 640
-#define WINDOW_HEIGHT 480
-
-#define PLAYER_SPEED 4
-
-#define ENEMY_MAX_SIZE 100
-#define ENEMY_MIN_SIZE 60
-#define ENEMY_MAX_SPEED 4
-#define ENEMY_MIN_SPEED 1
-#define ENEMY_SPAWN_RATE 50
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -30,27 +17,6 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
-typedef struct sPoint {
-	float x, y;
-} TPoint;
-
-TPoint point(float x, float y) {
-	TPoint pt;
-	pt.x = x;
-	pt.y = y;
-
-	return pt;
-}
-
-typedef struct SObject {
-	TPoint pos;
-	TPoint size;
-	COLORREF brush;
-	TPoint speed;
-	char oType;
-	BOOL isDel;
-} TObject, *PObject;
-
 // Declarations
 RECT rct;
 RECT windowRect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
@@ -61,93 +27,9 @@ int objectCount = 0;
 int score = 0;
 
 
-
 // Functionds
 
-BOOL objectCollision(TObject o1, TObject o2) {
-	return ((o1.pos.x + o1.size.x) > o2.pos.x) && (o1.pos.x < (o2.pos.x + o2.size.x)) &&
-		((o1.pos.y + o1.size.y) > o2.pos.y) && (o1.pos.y < (o2.pos.y + o2.size.y));
-}
 
-void initObject(TObject* obj, float xPos, float yPos, float width, float height, char objType, TPoint speed) {
-	obj->pos = point(xPos, yPos);
-	obj->size = point(width, height);
-	obj->speed = speed;
-	obj->oType = objType;
-	if (objType == 'p') obj->brush = RGB(0, 255, 0);
-	if (objType == 'e') obj->brush = RGB(255, 0, 0);
-	obj->isDel = FALSE;
-}
-
-void showObject(TObject obj, HDC dc) {
-	SelectObject(dc, GetStockObject(DC_PEN));
-	SetDCPenColor(dc, RGB(0, 0, 0));
-	SelectObject(dc, GetStockObject(DC_BRUSH));
-	SetDCBrushColor(dc, obj.brush);
-
-	// Update score
-	char output[10];
-	snprintf(output, 10, "%d", score);
-	TextOutA(dc, 50, 20, output, lstrlenA(output));
-
-	Rectangle(dc, (int)(obj.pos.x), (int)(obj.pos.y), (int)(obj.pos.x + obj.size.x), (int)(obj.pos.y + obj.size.y));
-}
-
-void movePlayer(TObject* obj) {
-	obj->pos.x += obj->speed.x;
-	obj->pos.y += obj->speed.y;
-	if (obj->pos.x <= 0) obj->pos.x = 0;
-	if (obj->pos.x + obj->size.x >= WINDOW_WIDTH) obj->pos.x = WINDOW_WIDTH - obj->size.x;
-	if (obj->pos.y <= 0) obj->pos.y = 0;
-	if (obj->pos.y + obj->size.y >= WINDOW_HEIGHT) obj->pos.y = WINDOW_HEIGHT - obj->size.y;
-}
-
-void moveEnemy(TObject* obj) {
-	obj->pos.y += obj->speed.y;
-
-	if (obj->pos.y > WINDOW_HEIGHT + ENEMY_MAX_SIZE + 10) {
-		obj->isDel = TRUE;
-	}
-}
-
-
-PObject newObject() {
-	objectCount++;
-	mas = realloc(mas, sizeof(*mas) * objectCount);
-	return mas + objectCount - 1;
-}
-
-void delObjects() {
-	int i = 0;
-	while (i < objectCount)
-	{
-		if (mas[i].isDel) {
-			objectCount--;
-			mas[i] = mas[objectCount];
-			mas = realloc(mas, sizeof(*mas) * objectCount);
-			score++;
-		}
-		else
-			i++;
-	}
-}
-
-void createEnemy() {
-	// Random range formula: num = (rand() % (upper – lower + 1)) + lower 
-	float enemySpeed = (rand() % (ENEMY_MAX_SPEED - ENEMY_MIN_SPEED + 1)) + ENEMY_MIN_SPEED;
-	float enemyWidth = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
-	float enemyHeight = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
-	float startLocation = (rand() % (WINDOW_WIDTH - (int)enemyWidth + 1));
-	initObject(newObject(), startLocation, -100, enemyWidth, enemyHeight, 'e', point(0, enemySpeed));
-}
-
-void generateEnemy() {
-	int spawnRate = rand() % ENEMY_SPAWN_RATE;
-
-	if (spawnRate == 1) {
-		createEnemy();
-	}
-}
 
 void gameInit() {
 	initObject(&player, 100, 100, 40, 40, 'p', point(0,0));
@@ -189,6 +71,7 @@ void updateWindow(HDC dc) {
 	Rectangle(memDC, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
 	showObject(player, memDC);
+	updateScore(memDC, score);
 
 	for (int i = 0; i < objectCount; i++) {
 		showObject(mas[i], memDC);
