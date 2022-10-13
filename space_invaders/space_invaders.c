@@ -12,6 +12,8 @@
 #define WINDOW_HEIGHT 480
 
 #define PLAYER_SPEED 4
+#define PLAYER_SIZE 40
+
 #define BULLET_SPEED 2
 #define BULLET_SIZE 10
 
@@ -98,11 +100,11 @@ void showObject(TObject obj, HDC dc) {
 
 void movePlayer(TObject* obj) {
 	obj->pos.x += obj->speed.x;
-	obj->pos.y += obj->speed.y;
+	//obj->pos.y += obj->speed.y;
 	if (obj->pos.x <= 0) obj->pos.x = 0;
 	if (obj->pos.x + obj->size.x >= WINDOW_WIDTH) obj->pos.x = WINDOW_WIDTH - obj->size.x;
-	if (obj->pos.y <= 0) obj->pos.y = 0;
-	if (obj->pos.y + obj->size.y >= WINDOW_HEIGHT) obj->pos.y = WINDOW_HEIGHT - obj->size.y;
+	//if (obj->pos.y <= 0) obj->pos.y = 0;
+	//if (obj->pos.y + obj->size.y >= WINDOW_HEIGHT) obj->pos.y = WINDOW_HEIGHT - obj->size.y;
 }
 
 void moveObjects(TObject* obj) {
@@ -167,20 +169,22 @@ void generateEnemy() {
 }
 
 void gameInit() {
-	initObject(&player, 100, 100, 40, 40, 'p', point(0,0));
+	initObject(&player, WINDOW_WIDTH/2-PLAYER_SIZE/2, WINDOW_HEIGHT-PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE, 'p', point(0,0));
 }
 
 void playerControl() {
 	player.speed.x = 0;
 	player.speed.y = 0;
 
-	if (GetAsyncKeyState('W') < 0) player.speed.y -= PLAYER_SPEED;
-	if (GetAsyncKeyState('S') < 0) player.speed.y = PLAYER_SPEED;
+	//if (GetAsyncKeyState('W') < 0) player.speed.y -= PLAYER_SPEED;
+	//if (GetAsyncKeyState('S') < 0) player.speed.y = PLAYER_SPEED;
 	if (GetAsyncKeyState('A') < 0) player.speed.x -= PLAYER_SPEED;
 	if (GetAsyncKeyState('D') < 0) player.speed.x = PLAYER_SPEED;
-	if ((player.speed.x != 0) && (player.speed.y != 0)) {
-		player.speed = point(player.speed.x * 0.7, player.speed.y = player.speed.y * 0.7);
-	}
+
+	// Code for moving diagonal
+	//if ((player.speed.x != 0) && (player.speed.y != 0)) {
+	//	player.speed = point(player.speed.x * 0.7, player.speed.y = player.speed.y * 0.7);
+	//}
 }
 
 void winMove() {
