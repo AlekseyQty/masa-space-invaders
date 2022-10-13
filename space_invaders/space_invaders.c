@@ -209,9 +209,9 @@ void winMove() {
 	generateEnemy();
 	for (int i = 0; i < objectCount; i++) {
 		moveObjects(mas + i);
-		//if (objectCollision(player, mas[i])) {
-		//	mas[i].isDel = TRUE;
-		//}
+		if (mas[i].oType == 'e' && objectCollision(player, mas[i])) {
+			isPause = TRUE;
+		}
 	}
 
 	delObjects();
