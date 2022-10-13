@@ -23,6 +23,8 @@
 #define ENEMY_MIN_SPEED 1
 #define ENEMY_SPAWN_RATE 50
 
+#define ID_BTN 999
+
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 HWND                InitInstance(HINSTANCE, int);
@@ -58,10 +60,12 @@ typedef struct SObject {
 // Declarations
 RECT rct;
 RECT windowRect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+HWND btnRestart = NULL;
 TObject player;
 PObject mas = NULL;
 BOOL isGameRunning = TRUE;
 BOOL isPause = FALSE;
+BOOL needNewGame = FALSE;
 int objectCount = 0;
 int score = 0;
 
@@ -151,6 +155,7 @@ void delObjects() {
 	}
 }
 
+
 void addBullet(float xPos, float yPos) {
 	PObject obj = newObject();
 	initObject(obj, xPos+(player.size.x/2-BULLET_SIZE/2), yPos, BULLET_SIZE, BULLET_SIZE, 'b', point(0, -BULLET_SPEED));
@@ -174,6 +179,12 @@ void generateEnemy() {
 }
 
 void gameInit() {
+	needNewGame = FALSE;
+	mas = NULL;
+	objectCount = 0;
+	btnRestart = NULL;
+	realloc(mas, 0);
+	score = 0;
 	initObject(&player, WINDOW_WIDTH/2-PLAYER_SIZE/2, WINDOW_HEIGHT-PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE, 'p', point(0,0));
 }
 
@@ -226,6 +237,13 @@ void updateWindow(HDC dc) {
 	DeleteObject(memBM);
 }
 
+HWND createButton(HWND hwnd) {
+	HWND btnRestart;
+	btnRestart = CreateWindowW(L"Button", L"Restart", WS_VISIBLE | WS_CHILD, WINDOW_WIDTH/2-100/2, WINDOW_HEIGHT/2-50/2, 100, 50, hwnd, ID_BTN, NULL , NULL);
+
+	return btnRestart;
+}
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -275,9 +293,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				isGameRunning = FALSE;
 			}
 			if (isPause) {
+				if (!btnRestart) {
+					btnRestart = createButton(hWnd);
+				}
 				Sleep(5);
 			}
 			else {
+				if (needNewGame) {
+					gameInit();
+				}
 				winMove();
 				updateWindow(dc);
 				Sleep(5);
@@ -374,6 +398,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
 			break;
+		case ID_BTN:
+			needNewGame = TRUE;
+			isPause = FALSE;
+			break;
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
@@ -393,8 +421,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_SIZE:
 		GetClientRect(hWnd, &rct);
+		break;
 	case WM_LBUTTONDOWN:
 		addBullet(player.pos.x, player.pos.y);
+		break;
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
