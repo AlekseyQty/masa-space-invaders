@@ -12,6 +12,8 @@
 #define WINDOW_HEIGHT 480
 
 #define PLAYER_SPEED 4
+#define BULLET_SPEED 2
+#define BULLET_SIZE 10
 
 #define ENEMY_MAX_SIZE 100
 #define ENEMY_MIN_SIZE 60
@@ -76,6 +78,7 @@ void initObject(TObject* obj, float xPos, float yPos, float width, float height,
 	obj->oType = objType;
 	if (objType == 'p') obj->brush = RGB(0, 255, 0);
 	if (objType == 'e') obj->brush = RGB(255, 0, 0);
+	if (objType == 'b') obj->brush = RGB(0, 0, 255);
 	obj->isDel = FALSE;
 }
 
@@ -102,11 +105,21 @@ void movePlayer(TObject* obj) {
 	if (obj->pos.y + obj->size.y >= WINDOW_HEIGHT) obj->pos.y = WINDOW_HEIGHT - obj->size.y;
 }
 
-void moveEnemy(TObject* obj) {
+void moveObjects(TObject* obj) {
 	obj->pos.y += obj->speed.y;
 
-	if (obj->pos.y > WINDOW_HEIGHT + ENEMY_MAX_SIZE + 10) {
+	if (obj->pos.y > WINDOW_HEIGHT + ENEMY_MAX_SIZE + 10 || obj->pos.y < -150) {
 		obj->isDel = TRUE;
+	}
+
+	if (obj->oType == 'b') {
+		for (int i = 0; i < objectCount; i++) {
+			if ((mas[i].oType == 'e') && (objectCollision(*obj, mas[i]))) {
+				mas[i].isDel = TRUE;
+				obj->isDel = TRUE;
+				score++;
+			}
+		}
 	}
 }
 
@@ -125,11 +138,15 @@ void delObjects() {
 			objectCount--;
 			mas[i] = mas[objectCount];
 			mas = realloc(mas, sizeof(*mas) * objectCount);
-			score++;
 		}
 		else
 			i++;
 	}
+}
+
+void addBullet(float xPos, float yPos) {
+	PObject obj = newObject();
+	initObject(obj, xPos+(player.size.x/2-BULLET_SIZE/2), yPos, BULLET_SIZE, BULLET_SIZE, 'b', point(0, -BULLET_SPEED));
 }
 
 void createEnemy() {
@@ -171,10 +188,10 @@ void winMove() {
 	movePlayer(&player);
 	generateEnemy();
 	for (int i = 0; i < objectCount; i++) {
-		moveEnemy(mas + i);
-		if (objectCollision(player, mas[i])) {
-			mas[i].isDel = TRUE;
-		}
+		moveObjects(mas + i);
+		//if (objectCollision(player, mas[i])) {
+		//	mas[i].isDel = TRUE;
+		//}
 	}
 
 	delObjects();
@@ -362,6 +379,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_SIZE:
 		GetClientRect(hWnd, &rct);
+	case WM_LBUTTONDOWN:
+		addBullet(player.pos.x, player.pos.y);
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
