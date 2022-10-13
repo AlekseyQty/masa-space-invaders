@@ -61,6 +61,7 @@ RECT windowRect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
 TObject player;
 PObject mas = NULL;
 BOOL isGameRunning = TRUE;
+BOOL isPause = FALSE;
 int objectCount = 0;
 int score = 0;
 
@@ -110,7 +111,11 @@ void movePlayer(TObject* obj) {
 void moveObjects(TObject* obj) {
 	obj->pos.y += obj->speed.y;
 
-	if (obj->pos.y > WINDOW_HEIGHT + ENEMY_MAX_SIZE + 10 || obj->pos.y < -150) {
+	if (obj->oType == 'e' && (obj->pos.y > WINDOW_HEIGHT + ENEMY_MAX_SIZE + 10)) {
+		obj->isDel = TRUE;
+		isPause = TRUE;
+	}
+	if (obj->oType == 'b' && obj->pos.y < -150) {
 		obj->isDel = TRUE;
 	}
 
@@ -269,9 +274,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			if (GetKeyState(VK_ESCAPE) < 0) {
 				isGameRunning = FALSE;
 			}
-			winMove();
-			updateWindow(dc);
-			Sleep(5);
+			if (isPause) {
+				Sleep(5);
+			}
+			else {
+				winMove();
+				updateWindow(dc);
+				Sleep(5);
+			}
 		}
 
 	}
