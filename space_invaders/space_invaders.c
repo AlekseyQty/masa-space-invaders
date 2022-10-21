@@ -11,15 +11,16 @@
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 
-#define PLAYER_SPEED 4
+#define PLAYER_INITIAL_SPEED 6
 #define PLAYER_SIZE 40
 
-#define BULLET_SPEED 2
+#define BULLET_SPEED 4
 #define BULLET_SIZE 10
+
+#define DIFFICULTY_INCREASE_TIME 10000
 
 #define ENEMY_MAX_SIZE 100
 #define ENEMY_MIN_SIZE 60
-#define ENEMY_MAX_SPEED 4
 #define ENEMY_MIN_SPEED 1
 #define ENEMY_SPAWN_RATE 50
 
@@ -62,12 +63,14 @@ RECT rct;
 RECT windowRect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
 HWND btnRestart = NULL;
 TObject player;
-PObject mas = NULL;
+PObject enemyArray = NULL;
 BOOL isGameRunning = TRUE;
 BOOL isPause = FALSE;
 BOOL needNewGame = FALSE;
 int objectCount = 0;
 int score = 0;
+int gEnemySpeed = 1;
+int gPlayerSpeed = 6;
 
 
 
@@ -125,8 +128,8 @@ void moveObjects(TObject* obj) {
 
 	if (obj->oType == 'b') {
 		for (int i = 0; i < objectCount; i++) {
-			if ((mas[i].oType == 'e') && (objectCollision(*obj, mas[i]))) {
-				mas[i].isDel = TRUE;
+			if ((enemyArray[i].oType == 'e') && (objectCollision(*obj, enemyArray[i]))) {
+				enemyArray[i].isDel = TRUE;
 				obj->isDel = TRUE;
 				score++;
 			}
@@ -137,18 +140,18 @@ void moveObjects(TObject* obj) {
 
 PObject newObject() {
 	objectCount++;
-	mas = realloc(mas, sizeof(*mas) * objectCount);
-	return mas + objectCount - 1;
+	enemyArray = realloc(enemyArray, sizeof(*enemyArray) * objectCount);
+	return enemyArray + objectCount - 1;
 }
 
 void delObjects() {
 	int i = 0;
 	while (i < objectCount)
 	{
-		if (mas[i].isDel) {
+		if (enemyArray[i].isDel) {
 			objectCount--;
-			mas[i] = mas[objectCount];
-			mas = realloc(mas, sizeof(*mas) * objectCount);
+			enemyArray[i] = enemyArray[objectCount];
+			enemyArray = realloc(enemyArray, sizeof(*enemyArray) * objectCount);
 		}
 		else
 			i++;
@@ -163,7 +166,7 @@ void addBullet(float xPos, float yPos) {
 
 void createEnemy() {
 	// Random range formula: num = (rand() % (upper – lower + 1)) + lower 
-	float enemySpeed = (rand() % (ENEMY_MAX_SPEED - ENEMY_MIN_SPEED + 1)) + ENEMY_MIN_SPEED;
+	float enemySpeed = (rand() % (gEnemySpeed - ENEMY_MIN_SPEED + 1)) + ENEMY_MIN_SPEED;
 	float enemyWidth = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
 	float enemyHeight = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
 	float startLocation = (rand() % (WINDOW_WIDTH - (int)enemyWidth + 1));
@@ -178,12 +181,15 @@ void generateEnemy() {
 	}
 }
 
-void gameInit() {
+void gameInit(HWND hWnd) {
+	gEnemySpeed = 1;
+	gPlayerSpeed = PLAYER_INITIAL_SPEED;
+	SetTimer(hWnd, 1, DIFFICULTY_INCREASE_TIME, (TIMERPROC)NULL);
 	needNewGame = FALSE;
-	mas = NULL;
+	enemyArray = NULL;
 	objectCount = 0;
 	btnRestart = NULL;
-	realloc(mas, 0);
+	realloc(enemyArray, 0);
 	score = 0;
 	initObject(&player, WINDOW_WIDTH/2-PLAYER_SIZE/2, WINDOW_HEIGHT-PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE, 'p', point(0,0));
 }
@@ -194,8 +200,9 @@ void playerControl() {
 
 	//if (GetAsyncKeyState('W') < 0) player.speed.y -= PLAYER_SPEED;
 	//if (GetAsyncKeyState('S') < 0) player.speed.y = PLAYER_SPEED;
-	if (GetAsyncKeyState('A') < 0) player.speed.x -= PLAYER_SPEED;
-	if (GetAsyncKeyState('D') < 0) player.speed.x = PLAYER_SPEED;
+	if (GetAsyncKeyState('A') < 0) player.speed.x -= gPlayerSpeed;
+	if (GetAsyncKeyState('D') < 0) player.speed.x = gPlayerSpeed;
+	
 
 	// Code for moving diagonal
 	//if ((player.speed.x != 0) && (player.speed.y != 0)) {
@@ -208,8 +215,8 @@ void winMove() {
 	movePlayer(&player);
 	generateEnemy();
 	for (int i = 0; i < objectCount; i++) {
-		moveObjects(mas + i);
-		if (mas[i].oType == 'e' && objectCollision(player, mas[i])) {
+		moveObjects(enemyArray + i);
+		if (enemyArray[i].oType == 'e' && objectCollision(player, enemyArray[i])) {
 			isPause = TRUE;
 		}
 	}
@@ -228,7 +235,7 @@ void updateWindow(HDC dc) {
 	showObject(player, memDC);
 
 	for (int i = 0; i < objectCount; i++) {
-		showObject(mas[i], memDC);
+		showObject(enemyArray[i], memDC);
 	}
 
 	// Copy from Memory Device Context to Device Context
@@ -276,8 +283,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	// Main message loop:
 	OutputDebugString(L"GAME INIT\n");
-	//initPlayer(dc);
-	gameInit();
+	gameInit(hWnd);
 
 	while (isGameRunning)
 	{
@@ -300,7 +306,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			}
 			else {
 				if (needNewGame) {
-					gameInit();
+					DestroyWindow(btnRestart);
+					KillTimer(hWnd, 1);
+					gameInit(hWnd);
 				}
 				winMove();
 				updateWindow(dc);
@@ -422,9 +430,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_SIZE:
 		GetClientRect(hWnd, &rct);
 		break;
-	case WM_LBUTTONDOWN:
-		addBullet(player.pos.x, player.pos.y);
+	case WM_KEYUP:
+		// 32 == SPACE
+		if (wParam == 32) {
+			addBullet(player.pos.x, player.pos.y);
+		}
 		break;
+	case WM_TIMER:
+		if (wParam == 1) {
+			gEnemySpeed++;
+			gPlayerSpeed++;
+			break;
+		}
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
