@@ -59,11 +59,10 @@ typedef struct SObject {
 } TObject, *PObject;
 
 // Declarations
-RECT rct;
-RECT windowRect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+RECT windowRct = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
 HWND btnRestart = NULL;
 TObject player;
-PObject enemyArray = NULL;
+PObject objectsArray = NULL;
 BOOL isGameRunning = TRUE;
 BOOL isPause = FALSE;
 BOOL needNewGame = FALSE;
@@ -100,7 +99,7 @@ void showObject(TObject obj, HDC dc) {
 
 	// Update score
 	char output[10];
-	snprintf(output, 10, "%d", score);
+	snprintf(output, 10, "Score: %d", score);
 	TextOutA(dc, 50, 20, output, lstrlenA(output));
 
 	Rectangle(dc, (int)(obj.pos.x), (int)(obj.pos.y), (int)(obj.pos.x + obj.size.x), (int)(obj.pos.y + obj.size.y));
@@ -128,8 +127,8 @@ void moveObjects(TObject* obj) {
 
 	if (obj->oType == 'b') {
 		for (int i = 0; i < objectCount; i++) {
-			if ((enemyArray[i].oType == 'e') && (objectCollision(*obj, enemyArray[i]))) {
-				enemyArray[i].isDel = TRUE;
+			if ((objectsArray[i].oType == 'e') && (objectCollision(*obj, objectsArray[i]))) {
+				objectsArray[i].isDel = TRUE;
 				obj->isDel = TRUE;
 				score++;
 			}
@@ -140,18 +139,18 @@ void moveObjects(TObject* obj) {
 
 PObject newObject() {
 	objectCount++;
-	enemyArray = realloc(enemyArray, sizeof(*enemyArray) * objectCount);
-	return enemyArray + objectCount - 1;
+	objectsArray = realloc(objectsArray, sizeof(*objectsArray) * objectCount);
+	return objectsArray + objectCount - 1;
 }
 
 void delObjects() {
 	int i = 0;
 	while (i < objectCount)
 	{
-		if (enemyArray[i].isDel) {
+		if (objectsArray[i].isDel) {
 			objectCount--;
-			enemyArray[i] = enemyArray[objectCount];
-			enemyArray = realloc(enemyArray, sizeof(*enemyArray) * objectCount);
+			objectsArray[i] = objectsArray[objectCount];
+			objectsArray = realloc(objectsArray, sizeof(*objectsArray) * objectCount);
 		}
 		else
 			i++;
@@ -186,10 +185,10 @@ void gameInit(HWND hWnd) {
 	gPlayerSpeed = PLAYER_INITIAL_SPEED;
 	SetTimer(hWnd, 1, DIFFICULTY_INCREASE_TIME, (TIMERPROC)NULL);
 	needNewGame = FALSE;
-	enemyArray = NULL;
+	objectsArray = NULL;
 	objectCount = 0;
 	btnRestart = NULL;
-	realloc(enemyArray, 0);
+	realloc(objectsArray, 0);
 	score = 0;
 	initObject(&player, WINDOW_WIDTH/2-PLAYER_SIZE/2, WINDOW_HEIGHT-PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE, 'p', point(0,0));
 }
@@ -215,8 +214,8 @@ void winMove() {
 	movePlayer(&player);
 	generateEnemy();
 	for (int i = 0; i < objectCount; i++) {
-		moveObjects(enemyArray + i);
-		if (enemyArray[i].oType == 'e' && objectCollision(player, enemyArray[i])) {
+		moveObjects(objectsArray + i);
+		if (objectsArray[i].oType == 'e' && objectCollision(player, objectsArray[i])) {
 			isPause = TRUE;
 		}
 	}
@@ -226,7 +225,7 @@ void winMove() {
 
 void updateWindow(HDC dc) {
 	HDC memDC = CreateCompatibleDC(dc);
-	HBITMAP memBM = CreateCompatibleBitmap(dc, rct.right - rct.left, rct.bottom - rct.top);
+	HBITMAP memBM = CreateCompatibleBitmap(dc, windowRct.right - windowRct.left, windowRct.bottom - windowRct.top);
 	SelectObject(memDC, memBM);
 
 	SelectObject(memDC, CreateSolidBrush(RGB(255, 255, 255)));
@@ -235,11 +234,11 @@ void updateWindow(HDC dc) {
 	showObject(player, memDC);
 
 	for (int i = 0; i < objectCount; i++) {
-		showObject(enemyArray[i], memDC);
+		showObject(objectsArray[i], memDC);
 	}
 
 	// Copy from Memory Device Context to Device Context
-	BitBlt(dc, 0, 0, rct.right - rct.left, rct.bottom - rct.top, memDC, 0, 0, SRCCOPY);
+	BitBlt(dc, 0, 0, windowRct.right - windowRct.left, windowRct.bottom - windowRct.top, memDC, 0, 0, SRCCOPY);
 	DeleteDC(memDC);
 	DeleteObject(memBM);
 }
@@ -364,10 +363,10 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hInst = hInstance; // Store instance handle in our global variable
 
 	// Adjust window due to menus/borders taking some space
-	AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, TRUE);
+	AdjustWindowRect(&windowRct, WS_OVERLAPPEDWINDOW, TRUE);
 
 	HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-		10, 10, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, NULL, NULL, hInstance, NULL);
+		10, 10, windowRct.right - windowRct.left, windowRct.bottom - windowRct.top, NULL, NULL, hInstance, NULL);
 
 	if (!hWnd)
 	{
@@ -428,7 +427,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		PostQuitMessage(0);
 		break;
 	case WM_SIZE:
-		GetClientRect(hWnd, &rct);
+		GetClientRect(hWnd, &windowRct);
 		break;
 	case WM_KEYUP:
 		// 32 == SPACE
