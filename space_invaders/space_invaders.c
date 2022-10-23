@@ -92,16 +92,22 @@ void initObject(TObject* obj, float xPos, float yPos, float width, float height,
 	obj->isDel = FALSE;
 }
 
+void showScore(HDC dc) {
+	// Update score
+	char output[10];
+	snprintf(output, 10, "Score: %d", score);
+	SetTextColor(dc, RGB(255,255,255));
+	SetBkMode(dc, TRANSPARENT);
+	TextOutA(dc, 50, 20, output, lstrlenA(output));
+}
+
 void showObject(TObject obj, HDC dc) {
 	SelectObject(dc, GetStockObject(DC_PEN));
 	SetDCPenColor(dc, RGB(0, 0, 0));
 	SelectObject(dc, GetStockObject(DC_BRUSH));
 	SetDCBrushColor(dc, obj.brush);
 
-	// Update score
-	char output[10];
-	snprintf(output, 10, "Score: %d", score);
-	TextOutA(dc, 50, 20, output, lstrlenA(output));
+	showScore(dc);
 
 	Rectangle(dc, (int)(obj.pos.x), (int)(obj.pos.y), (int)(obj.pos.x + obj.size.x), (int)(obj.pos.y + obj.size.y));
 }
@@ -224,17 +230,29 @@ void winMove() {
 	delObjects();
 }
 
+void drawBackground(HDC dc) {
+	HBITMAP hBitmap;
+	BITMAP bitmap;
+	HDC hdcMem;
+	HGDIOBJ oldBitmap;
+
+	hBitmap = (HBITMAP)LoadImageW(NULL, L"bg_new.bmp",
+		IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+	GetObject(hBitmap, sizeof(bitmap), &bitmap);
+
+	hdcMem = CreateCompatibleDC(dc);
+	oldBitmap = SelectObject(hdcMem, hBitmap);
+	BitBlt(dc, 6, 6, bitmap.bmWidth, bitmap.bmHeight, hdcMem, 0, 0, SRCCOPY);
+	SelectObject(hdcMem, oldBitmap);
+	DeleteDC(hdcMem);
+}
+
 void updateWindow(HDC dc) {
 	HDC memDC = CreateCompatibleDC(dc);
-	HBITMAP memBM = CreateCompatibleBitmap(dc, windowRct.right - windowRct.left, windowRct.bottom - windowRct.top);
-	SelectObject(memDC, memBM);
-
-	//SelectObject(memDC, CreateSolidBrush(RGB(255, 255, 255)));
-
-	SelectObject(memDC, GetStockObject(DC_BRUSH));
-	SetDCBrushColor(memDC, RGB(0, 255, 255));
-	Rectangle(memDC, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-
+	HBITMAP backgroundBitmap = (HBITMAP)LoadImageW(NULL, L"bg-desert.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	SelectObject(memDC, backgroundBitmap);
+	
 	showObject(player, memDC);
 
 	for (int i = 0; i < objectCount; i++) {
@@ -242,9 +260,11 @@ void updateWindow(HDC dc) {
 	}
 
 	// Copy from Memory Device Context to Device Context
+	
 	BitBlt(dc, 0, 0, windowRct.right - windowRct.left, windowRct.bottom - windowRct.top, memDC, 0, 0, SRCCOPY);
+
 	DeleteDC(memDC);
-	DeleteObject(memBM);
+	DeleteObject(backgroundBitmap);
 }
 
 HWND createButton(HWND hwnd) {
@@ -296,7 +316,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 	// Main message loop:
-	OutputDebugString(L"GAME INIT\n");
 	gameInit(hWnd);
 
 	while (isGameRunning)
@@ -315,6 +334,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			if (isPause) {
 				// Do not recreate button if its already created
 				if (!btnRestart) {
+					updateWindow(dc);
 					btnRestart = createButton(hWnd);
 				}
 				Sleep(5);
