@@ -64,7 +64,8 @@ HWND btnRestart = NULL;
 TObject player;
 PObject objectsArray = NULL;
 BOOL isGameRunning = TRUE;
-BOOL isPause = FALSE;
+BOOL isPause = TRUE;
+BOOL isStartMenu = TRUE;
 BOOL needNewGame = FALSE;
 int objectCount = 0;
 int score = 0;
@@ -245,7 +246,18 @@ void updateWindow(HDC dc) {
 
 HWND createButton(HWND hwnd) {
 	HWND btnRestart;
-	btnRestart = CreateWindowW(L"Button", L"Restart", WS_VISIBLE | WS_CHILD, WINDOW_WIDTH/2-100/2, WINDOW_HEIGHT/2-50/2, 100, 50, hwnd, ID_BTN, NULL , NULL);
+	
+	LPCSTR btnName = L"";
+
+	if (isStartMenu) {
+		btnName = L"Start";
+		isStartMenu = FALSE;
+	}
+	else {
+		btnName = L"Restart";
+	}
+
+	btnRestart = CreateWindowW(L"Button", btnName, WS_VISIBLE | WS_CHILD, WINDOW_WIDTH/2-100/2, WINDOW_HEIGHT/2-50/2, 100, 50, hwnd, ID_BTN, NULL , NULL);
 
 	return btnRestart;
 }
@@ -298,6 +310,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				isGameRunning = FALSE;
 			}
 			if (isPause) {
+				// Do not recreate button if its already created
 				if (!btnRestart) {
 					btnRestart = createButton(hWnd);
 				}
@@ -305,7 +318,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			}
 			else {
 				if (needNewGame) {
-					DestroyWindow(btnRestart);
+					if (btnRestart) DestroyWindow(btnRestart);
 					KillTimer(hWnd, 1);
 					gameInit(hWnd);
 				}
