@@ -229,7 +229,10 @@ void updateWindow(HDC dc) {
 	HBITMAP memBM = CreateCompatibleBitmap(dc, windowRct.right - windowRct.left, windowRct.bottom - windowRct.top);
 	SelectObject(memDC, memBM);
 
-	SelectObject(memDC, CreateSolidBrush(RGB(255, 255, 255)));
+	//SelectObject(memDC, CreateSolidBrush(RGB(255, 255, 255)));
+
+	SelectObject(memDC, GetStockObject(DC_BRUSH));
+	SetDCBrushColor(memDC, RGB(0, 255, 255));
 	Rectangle(memDC, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
 	showObject(player, memDC);
