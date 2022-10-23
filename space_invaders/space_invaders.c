@@ -12,7 +12,7 @@
 #define WINDOW_HEIGHT 480
 
 #define PLAYER_INITIAL_SPEED 6
-#define PLAYER_SIZE 40
+#define PLAYER_SIZE 45
 
 #define BULLET_SPEED 4
 #define BULLET_SIZE 10
@@ -87,15 +87,15 @@ void initObject(TObject* obj, float xPos, float yPos, float width, float height,
 	obj->speed = speed;
 	obj->oType = objType;
 	if (objType == 'p') obj->brush = RGB(0, 255, 0);
-	if (objType == 'e') obj->brush = RGB(255, 0, 0);
-	if (objType == 'b') obj->brush = RGB(0, 0, 255);
+	if (objType == 'e') obj->brush = RGB(230, 40, 40);
+	if (objType == 'b') obj->brush = RGB(146, 255, 230);
 	obj->isDel = FALSE;
 }
 
 void showScore(HDC dc) {
 	// Update score
-	char output[10];
-	snprintf(output, 10, "Score: %d", score);
+	char output[100];
+	snprintf(output, 100, "Score: %d", score);
 	SetTextColor(dc, RGB(255,255,255));
 	SetBkMode(dc, TRANSPARENT);
 	TextOutA(dc, 50, 20, output, lstrlenA(output));
@@ -109,7 +109,27 @@ void showObject(TObject obj, HDC dc) {
 
 	showScore(dc);
 
-	Rectangle(dc, (int)(obj.pos.x), (int)(obj.pos.y), (int)(obj.pos.x + obj.size.x), (int)(obj.pos.y + obj.size.y));
+	if (obj.oType == 'e' || obj.oType == 'b') {
+		Ellipse(dc, (int)(obj.pos.x), (int)(obj.pos.y), (int)(obj.pos.x + obj.size.x), (int)(obj.pos.y + obj.size.y));
+	}
+
+	else if (obj.oType == 'p') {
+		PAINTSTRUCT     ps;
+		BITMAP          bitmap;
+		HDC             hdcMem;
+		HGDIOBJ         oldBitmap;
+		HBITMAP spaceShipBitmap = (HBITMAP)LoadImageW(NULL, L"player-spaceship.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+
+		hdcMem = CreateCompatibleDC(dc);
+		oldBitmap = SelectObject(hdcMem, spaceShipBitmap);
+
+		GetObject(spaceShipBitmap, sizeof(bitmap), &bitmap);
+		BitBlt(dc, (int)(obj.pos.x), (int)(obj.pos.y), 100, bitmap.bmHeight, hdcMem, 0, 0, SRCCOPY);
+
+		SelectObject(hdcMem, oldBitmap);
+		DeleteDC(hdcMem);
+	}
 }
 
 void movePlayer(TObject* obj) {
@@ -137,7 +157,7 @@ void moveObjects(TObject* obj) {
 			if ((objectsArray[i].oType == 'e') && (objectCollision(*obj, objectsArray[i]))) {
 				objectsArray[i].isDel = TRUE;
 				obj->isDel = TRUE;
-				score++;
+				score+=100;
 			}
 		}
 	}
@@ -174,9 +194,9 @@ void createEnemy() {
 	// Random range formula: num = (rand() % (upper – lower + 1)) + lower 
 	float enemySpeed = (rand() % (gEnemySpeed - ENEMY_MIN_SPEED + 1)) + ENEMY_MIN_SPEED;
 	float enemyWidth = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
-	float enemyHeight = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
+	//float enemyHeight = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
 	float startLocation = (rand() % (WINDOW_WIDTH - (int)enemyWidth + 1));
-	initObject(newObject(), startLocation, -100, enemyWidth, enemyHeight, 'e', point(0, enemySpeed));
+	initObject(newObject(), startLocation, -100, enemyWidth, enemyWidth, 'e', point(0, enemySpeed));
 }
 
 void generateEnemy() {
@@ -251,6 +271,7 @@ void drawBackground(HDC dc) {
 void updateWindow(HDC dc) {
 	HDC memDC = CreateCompatibleDC(dc);
 	HBITMAP backgroundBitmap = (HBITMAP)LoadImageW(NULL, L"bg-desert.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
 	SelectObject(memDC, backgroundBitmap);
 	
 	showObject(player, memDC);
