@@ -11,13 +11,14 @@
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 
-#define PLAYER_INITIAL_SPEED 6
+#define DEFAULT_ENEMY_SPEED 1
+#define DEFAULT_PLAYER_SPEED 6
+#define DEFAULT_BULLET_SPEED 4
+#define DEFAULT_BULLET_SIZE 10
 #define PLAYER_SIZE 45
 
-#define BULLET_SPEED 4
-#define BULLET_SIZE 10
-
-#define DIFFICULTY_INCREASE_TIME 10000
+#define DIFFICULTY_INCREASE_TIME 10000 //in ms
+#define UPGRADE_TRESHOLD 3000
 
 #define ENEMY_MAX_SIZE 100
 #define ENEMY_MIN_SIZE 60
@@ -67,15 +68,18 @@ BOOL isGameRunning = TRUE;
 BOOL isPause = TRUE;
 BOOL isStartMenu = TRUE;
 BOOL needNewGame = FALSE;
+BOOL upgradeInProgress = FALSE;
 HDC backgroundDC = NULL;
 HBITMAP backgroundBitmap = NULL;
 HDC spaceShipDC = NULL;
 HBITMAP spaceShipBitmap = NULL;
 
-int objectCount = 0;
-int score = 0;
-int gEnemySpeed = 1;
-int gPlayerSpeed = 6;
+int objectCount;
+int score;
+int gEnemySpeed;
+int gBulletSize;
+int gBulletSpeed;
+int gPlayerSpeed;
 
 
 
@@ -178,7 +182,7 @@ void delObjects() {
 
 void addBullet(float xPos, float yPos) {
 	PObject obj = newObject();
-	initObject(obj, xPos+(player.size.x/2-BULLET_SIZE/2), yPos, BULLET_SIZE, BULLET_SIZE, 'b', point(0, -BULLET_SPEED));
+	initObject(obj, xPos+(player.size.x/2-gBulletSize/2), yPos, gBulletSize, gBulletSize, 'b', point(0, -gBulletSpeed));
 }
 
 void createEnemy() {
@@ -199,15 +203,17 @@ void generateEnemy() {
 }
 
 void gameInit(HWND hWnd) {
-	gEnemySpeed = 1;
-	gPlayerSpeed = PLAYER_INITIAL_SPEED;
-	SetTimer(hWnd, 1, DIFFICULTY_INCREASE_TIME, (TIMERPROC)NULL);
+	gEnemySpeed = DEFAULT_ENEMY_SPEED;
+	gPlayerSpeed = DEFAULT_PLAYER_SPEED;
+	gBulletSize = DEFAULT_BULLET_SIZE;
+	gBulletSpeed = DEFAULT_BULLET_SPEED;
 	needNewGame = FALSE;
 	objectsArray = NULL;
 	objectCount = 0;
 	btnRestart = NULL;
-	realloc(objectsArray, 0);
 	score = 0;
+	SetTimer(hWnd, 1, DIFFICULTY_INCREASE_TIME, (TIMERPROC)NULL);
+	realloc(objectsArray, 0);
 	initObject(&player, WINDOW_WIDTH/2-PLAYER_SIZE/2, WINDOW_HEIGHT-PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE, 'p', point(0,0));
 }
 
@@ -249,6 +255,19 @@ void loadImageBitmaps(HDC dc) {
 	spaceShipDC = CreateCompatibleDC(dc);
 	spaceShipBitmap = (HBITMAP)LoadImageW(NULL, L"player-spaceship.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 	SelectObject(spaceShipDC, spaceShipBitmap);
+}
+
+void upgradePlayer() {
+	if (score % UPGRADE_TRESHOLD == 0 && !upgradeInProgress && score!=0) {
+		gBulletSize += 10;
+		upgradeInProgress = TRUE;
+	}
+
+	else if (upgradeInProgress) {
+		if (score % UPGRADE_TRESHOLD != 0) {
+			upgradeInProgress = FALSE;
+		}
+	}
 }
 
 void updateWindow(HDC dc) {
@@ -351,6 +370,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					gameInit(hWnd);
 				}
 				winMove();
+				upgradePlayer();
 				updateWindow(dc);
 				Sleep(5);
 			}
