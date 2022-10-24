@@ -67,6 +67,11 @@ BOOL isGameRunning = TRUE;
 BOOL isPause = TRUE;
 BOOL isStartMenu = TRUE;
 BOOL needNewGame = FALSE;
+HDC backgroundDC = NULL;
+HBITMAP backgroundBitmap = NULL;
+HDC spaceShipDC = NULL;
+HBITMAP spaceShipBitmap = NULL;
+
 int objectCount = 0;
 int score = 0;
 int gEnemySpeed = 1;
@@ -114,21 +119,7 @@ void showObject(TObject obj, HDC dc) {
 	}
 
 	else if (obj.oType == 'p') {
-		PAINTSTRUCT     ps;
-		BITMAP          bitmap;
-		HDC             hdcMem;
-		HGDIOBJ         oldBitmap;
-		HBITMAP spaceShipBitmap = (HBITMAP)LoadImageW(NULL, L"player-spaceship.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-
-
-		hdcMem = CreateCompatibleDC(dc);
-		oldBitmap = SelectObject(hdcMem, spaceShipBitmap);
-
-		GetObject(spaceShipBitmap, sizeof(bitmap), &bitmap);
-		BitBlt(dc, (int)(obj.pos.x), (int)(obj.pos.y), 100, bitmap.bmHeight, hdcMem, 0, 0, SRCCOPY);
-
-		SelectObject(hdcMem, oldBitmap);
-		DeleteDC(hdcMem);
+		BitBlt(dc, (int)(obj.pos.x), (int)(obj.pos.y), 100, obj.size.x, spaceShipDC, 0, 0, SRCCOPY);
 	}
 }
 
@@ -250,30 +241,23 @@ void winMove() {
 	delObjects();
 }
 
-void drawBackground(HDC dc) {
-	HBITMAP hBitmap;
-	BITMAP bitmap;
-	HDC hdcMem;
-	HGDIOBJ oldBitmap;
+void loadImageBitmaps(HDC dc) {
+	backgroundDC = CreateCompatibleDC(dc);
+	backgroundBitmap = (HBITMAP)LoadImageW(NULL, L"bg-desert.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	SelectObject(backgroundDC, backgroundBitmap);
 
-	hBitmap = (HBITMAP)LoadImageW(NULL, L"bg_new.bmp",
-		IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-
-	GetObject(hBitmap, sizeof(bitmap), &bitmap);
-
-	hdcMem = CreateCompatibleDC(dc);
-	oldBitmap = SelectObject(hdcMem, hBitmap);
-	BitBlt(dc, 6, 6, bitmap.bmWidth, bitmap.bmHeight, hdcMem, 0, 0, SRCCOPY);
-	SelectObject(hdcMem, oldBitmap);
-	DeleteDC(hdcMem);
+	spaceShipDC = CreateCompatibleDC(dc);
+	spaceShipBitmap = (HBITMAP)LoadImageW(NULL, L"player-spaceship.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	SelectObject(spaceShipDC, spaceShipBitmap);
 }
 
 void updateWindow(HDC dc) {
 	HDC memDC = CreateCompatibleDC(dc);
-	HBITMAP backgroundBitmap = (HBITMAP)LoadImageW(NULL, L"bg-desert.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-
-	SelectObject(memDC, backgroundBitmap);
+	HBITMAP gameWindowBitmap = CreateCompatibleBitmap(dc, windowRct.right - windowRct.left, windowRct.bottom - windowRct.top);
+	SelectObject(memDC, gameWindowBitmap);
 	
+	BitBlt(memDC, 0, 0, windowRct.right - windowRct.left, windowRct.bottom - windowRct.top, backgroundDC, 0, 0, SRCCOPY);
+
 	showObject(player, memDC);
 
 	for (int i = 0; i < objectCount; i++) {
@@ -281,11 +265,10 @@ void updateWindow(HDC dc) {
 	}
 
 	// Copy from Memory Device Context to Device Context
-	
 	BitBlt(dc, 0, 0, windowRct.right - windowRct.left, windowRct.bottom - windowRct.top, memDC, 0, 0, SRCCOPY);
 
 	DeleteDC(memDC);
-	DeleteObject(backgroundBitmap);
+	DeleteObject(gameWindowBitmap);
 }
 
 HWND createButton(HWND hwnd) {
@@ -338,6 +321,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	// Main message loop:
 	gameInit(hWnd);
+	loadImageBitmaps(dc);
 
 	while (isGameRunning)
 	{
