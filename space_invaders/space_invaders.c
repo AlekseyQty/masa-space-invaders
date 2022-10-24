@@ -247,14 +247,22 @@ void winMove() {
 	delObjects();
 }
 
+void loadBitmap(HDC dc, HDC* imageDc, LPCSTR bmpPath) {
+	*imageDc = CreateCompatibleDC(dc);
+	HBITMAP imageBitmap = (HBITMAP)LoadImageW(NULL, bmpPath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	SelectObject(*imageDc, imageBitmap);
+}
+
 void loadImageBitmaps(HDC dc) {
-	backgroundDC = CreateCompatibleDC(dc);
+	loadBitmap(dc, &backgroundDC, L"bg-desert.bmp");
+	loadBitmap(dc, &spaceShipDC, L"player-spaceship.bmp");
+/*	backgroundDC = CreateCompatibleDC(dc);
 	backgroundBitmap = (HBITMAP)LoadImageW(NULL, L"bg-desert.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 	SelectObject(backgroundDC, backgroundBitmap);
 
 	spaceShipDC = CreateCompatibleDC(dc);
 	spaceShipBitmap = (HBITMAP)LoadImageW(NULL, L"player-spaceship.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-	SelectObject(spaceShipDC, spaceShipBitmap);
+	SelectObject(spaceShipDC, spaceShipBitmap)*/;
 }
 
 void upgradePlayer() {
