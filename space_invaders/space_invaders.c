@@ -67,6 +67,8 @@ BOOL isGameRunning = TRUE;
 BOOL isPause = TRUE;
 BOOL isStartMenu = TRUE;
 BOOL needNewGame = FALSE;
+HDC backgroundDC = NULL;
+HBITMAP backgroundBitmap = NULL;
 int objectCount = 0;
 int score = 0;
 int gEnemySpeed = 1;
@@ -250,30 +252,18 @@ void winMove() {
 	delObjects();
 }
 
-void drawBackground(HDC dc) {
-	HBITMAP hBitmap;
-	BITMAP bitmap;
-	HDC hdcMem;
-	HGDIOBJ oldBitmap;
-
-	hBitmap = (HBITMAP)LoadImageW(NULL, L"bg_new.bmp",
-		IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-
-	GetObject(hBitmap, sizeof(bitmap), &bitmap);
-
-	hdcMem = CreateCompatibleDC(dc);
-	oldBitmap = SelectObject(hdcMem, hBitmap);
-	BitBlt(dc, 6, 6, bitmap.bmWidth, bitmap.bmHeight, hdcMem, 0, 0, SRCCOPY);
-	SelectObject(hdcMem, oldBitmap);
-	DeleteDC(hdcMem);
+void loadBackground(HDC dc) {
+	backgroundDC = CreateCompatibleDC(dc);
+	backgroundBitmap = (HBITMAP)LoadImageW(NULL, L"bg-desert.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	SelectObject(backgroundDC, backgroundBitmap);
 }
 
 void updateWindow(HDC dc) {
 	HDC memDC = CreateCompatibleDC(dc);
-	HBITMAP backgroundBitmap = (HBITMAP)LoadImageW(NULL, L"bg-desert.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	HBITMAP gameWindowBitmap = CreateCompatibleBitmap(dc, windowRct.right - windowRct.left, windowRct.bottom - windowRct.top);
+	SelectObject(memDC, gameWindowBitmap);
+	BitBlt(memDC, 0, 0, windowRct.right - windowRct.left, windowRct.bottom - windowRct.top, backgroundDC, 0, 0, SRCCOPY);
 
-	SelectObject(memDC, backgroundBitmap);
-	
 	showObject(player, memDC);
 
 	for (int i = 0; i < objectCount; i++) {
@@ -281,11 +271,11 @@ void updateWindow(HDC dc) {
 	}
 
 	// Copy from Memory Device Context to Device Context
-	
 	BitBlt(dc, 0, 0, windowRct.right - windowRct.left, windowRct.bottom - windowRct.top, memDC, 0, 0, SRCCOPY);
 
+
 	DeleteDC(memDC);
-	DeleteObject(backgroundBitmap);
+	DeleteObject(gameWindowBitmap);
 }
 
 HWND createButton(HWND hwnd) {
@@ -338,6 +328,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	// Main message loop:
 	gameInit(hWnd);
+	loadBackground(dc);
 
 	while (isGameRunning)
 	{
