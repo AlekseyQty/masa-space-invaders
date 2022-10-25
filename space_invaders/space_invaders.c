@@ -434,7 +434,7 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow)
 	// Adjust window due to menus/borders taking some space
 	AdjustWindowRect(&windowRct, WS_OVERLAPPEDWINDOW, TRUE);
 
-	HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+	HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME,
 		10, 10, windowRct.right - windowRct.left, windowRct.bottom - windowRct.top, NULL, NULL, hInstance, NULL);
 
 	if (!hWnd)
