@@ -210,6 +210,7 @@ void gameInit(HWND hWnd) {
 	needNewGame = FALSE;
 	objectsArray = NULL;
 	objectCount = 0;
+	KillTimer(hWnd, 1);
 	btnRestart = NULL;
 	score = 0;
 	SetTimer(hWnd, 1, DIFFICULTY_INCREASE_TIME, (TIMERPROC)NULL);
@@ -298,7 +299,7 @@ void updateWindow(HDC dc) {
 	DeleteObject(gameWindowBitmap);
 }
 
-HWND createButton(HWND hwnd) {
+HWND createStartButton(HWND hwnd) {
 	HWND btnRestart;
 	
 	LPCSTR btnName = L"";
@@ -314,6 +315,10 @@ HWND createButton(HWND hwnd) {
 	btnRestart = CreateWindowW(L"Button", btnName, WS_VISIBLE | WS_CHILD, WINDOW_WIDTH/2-100/2, WINDOW_HEIGHT/2-50/2, 100, 50, hwnd, ID_BTN, NULL , NULL);
 
 	return btnRestart;
+}
+
+HWND createUpgradeButton(HWND hwnd) {
+	//TODO: Make upgrade btns
 }
 
 
@@ -367,14 +372,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				// Do not recreate button if its already created
 				if (!btnRestart) {
 					updateWindow(dc);
-					btnRestart = createButton(hWnd);
+					btnRestart = createStartButton(hWnd);
 				}
 				Sleep(5);
 			}
 			else {
 				if (needNewGame) {
-					if (btnRestart) DestroyWindow(btnRestart);
-					KillTimer(hWnd, 1);
 					gameInit(hWnd);
 				}
 				winMove();
@@ -477,6 +480,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case ID_BTN:
 			needNewGame = TRUE;
 			isPause = FALSE;
+			if (btnRestart) DestroyWindow(btnRestart);
 			break;
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
