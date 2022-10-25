@@ -299,22 +299,20 @@ void updateWindow(HDC dc) {
 	DeleteObject(gameWindowBitmap);
 }
 
-HWND createStartButton(HWND hwnd) {
-	HWND btnRestart;
-	
-	LPCSTR btnName = L"";
+void createStartButton(HWND hwnd, HWND *btnRestart) {
+	if (!(*btnRestart)) {
+		LPCSTR btnName = L"";
 
-	if (isStartMenu) {
-		btnName = L"Start";
-		isStartMenu = FALSE;
+		if (isStartMenu) {
+			btnName = L"Start";
+			isStartMenu = FALSE;
+		}
+		else {
+			btnName = L"Restart";
+		}
+
+		*btnRestart = CreateWindowW(L"Button", btnName, WS_VISIBLE | WS_CHILD, WINDOW_WIDTH / 2 - 100 / 2, WINDOW_HEIGHT / 2 - 50 / 2, 100, 50, hwnd, ID_BTN, NULL, NULL);
 	}
-	else {
-		btnName = L"Restart";
-	}
-
-	btnRestart = CreateWindowW(L"Button", btnName, WS_VISIBLE | WS_CHILD, WINDOW_WIDTH/2-100/2, WINDOW_HEIGHT/2-50/2, 100, 50, hwnd, ID_BTN, NULL , NULL);
-
-	return btnRestart;
 }
 
 HWND createUpgradeButton(HWND hwnd) {
@@ -372,8 +370,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				// Do not recreate button if its already created
 				if (!btnRestart) {
 					updateWindow(dc);
-					btnRestart = createStartButton(hWnd);
 				}
+				createStartButton(hWnd, &btnRestart);
 				Sleep(5);
 			}
 			else {
