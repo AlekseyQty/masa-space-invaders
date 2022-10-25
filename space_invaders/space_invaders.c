@@ -3,7 +3,7 @@
 
 #include "framework.h"
 #include "resource.h"
-#include "stdio.h"
+#include <stdio.h>
 #include <time.h>
 #include "configurations.h"
 #include "types.h"
@@ -333,9 +333,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		else
 		{
-			if (GetKeyState(VK_ESCAPE) < 0) {
-				isGameRunning = FALSE;
-			}
 			switch (gGameState)
 			{
 			case UPGRADING:
@@ -460,13 +457,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 		case ID_BTN_UPGRADE_BULLET_SIZE:
 			gBulletSize += UPGRADE_INCREMENT;
-			// TODO: better destroying algo
 			destroyUpgradeButtons();
 			gGameState = RUNNING;
 			break;
 		case ID_BTN_UPGRADE_BULLET_SPEED:
 			gBulletSpeed += UPGRADE_INCREMENT;
-			// TODO: better destroying algo
 			destroyUpgradeButtons();
 			gGameState = RUNNING;
 			break;
@@ -494,6 +489,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// 32 == SPACE
 		if (wParam == 32) {
 			addBullet(player.pos.x, player.pos.y);
+		}
+		// 27 == ESC
+		else if (wParam == 27) {
+			isGameRunning = FALSE;
 		}
 		break;
 	case WM_TIMER:

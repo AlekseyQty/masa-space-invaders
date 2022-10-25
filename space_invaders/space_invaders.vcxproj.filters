@@ -24,13 +24,7 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="space_invaders.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="configurations.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="types.h">
