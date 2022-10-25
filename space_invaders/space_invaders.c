@@ -18,7 +18,8 @@
 #define PLAYER_SIZE 45
 
 #define DIFFICULTY_INCREASE_TIME 10000 //in ms
-#define UPGRADE_TRESHOLD 100
+#define UPGRADE_TRESHOLD 1500
+#define UPGRADE_INCREMENT 5
 
 #define ENEMY_MAX_SIZE 100
 #define ENEMY_MIN_SIZE 60
@@ -332,9 +333,14 @@ void createUpgradeButton(HWND hwnd) {
 		btnUpgradeBulletSize = CreateWindowW(L"Button", L"Bullet size", WS_VISIBLE | WS_CHILD, WINDOW_WIDTH / 2 - BTN_WIDTH - 10, WINDOW_HEIGHT / 2 - BTN_HEIGHT / 2, BTN_WIDTH, BTN_HEIGHT, hwnd, ID_BTN_UPGRADE_BULLET_SIZE, NULL, NULL);
 		btnUpgradeBulletSpeed = CreateWindowW(L"Button", L"Bullet speed", WS_VISIBLE | WS_CHILD, WINDOW_WIDTH / 2 + 10, WINDOW_HEIGHT / 2 - BTN_HEIGHT / 2, BTN_WIDTH, BTN_HEIGHT, hwnd, ID_BTN_UPGRADE_BULLET_SPEED, NULL, NULL);
 	}
-	//TODO: Make upgrade btns
 }
 
+void destroyUpgradeButtons() {
+	if (btnUpgradeBulletSize) DestroyWindow(btnUpgradeBulletSize);
+	if (btnUpgradeBulletSpeed) DestroyWindow(btnUpgradeBulletSpeed);
+	btnUpgradeBulletSize = NULL;
+	btnUpgradeBulletSpeed = NULL;
+}
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -505,17 +511,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (btnRestart) DestroyWindow(btnRestart);
 			break;
 		case ID_BTN_UPGRADE_BULLET_SIZE:
-			gBulletSize += 10;
+			gBulletSize += UPGRADE_INCREMENT;
 			// TODO: better destroying algo
-			if (btnUpgradeBulletSize) DestroyWindow(btnUpgradeBulletSize);
-			if (btnUpgradeBulletSpeed) DestroyWindow(btnUpgradeBulletSpeed);
+			destroyUpgradeButtons();
 			gGameState = RUNNING;
 			break;
 		case ID_BTN_UPGRADE_BULLET_SPEED:
-			gBulletSpeed += 10;
+			gBulletSpeed += UPGRADE_INCREMENT;
 			// TODO: better destroying algo
-			if (btnUpgradeBulletSize) DestroyWindow(btnUpgradeBulletSize);
-			if (btnUpgradeBulletSpeed) DestroyWindow(btnUpgradeBulletSpeed);
+			destroyUpgradeButtons();
 			gGameState = RUNNING;
 			break;
 		default:
