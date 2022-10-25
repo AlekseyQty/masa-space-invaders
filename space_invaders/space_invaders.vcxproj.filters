@@ -27,6 +27,15 @@
     <ClInclude Include="space_invaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="configurations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="space_invaders.c">
