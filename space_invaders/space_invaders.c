@@ -2,35 +2,12 @@
 //
 
 #include "framework.h"
-#include "space_invaders.h"
-#include "stdio.h"
+#include "resource.h"
+#include <stdio.h>
 #include <time.h>
+#include "configurations.h"
+#include "types.h"
 
-#define MAX_LOADSTRING 100
-
-#define WINDOW_WIDTH 640
-#define WINDOW_HEIGHT 480
-
-#define DEFAULT_ENEMY_SPEED 1
-#define DEFAULT_PLAYER_SPEED 6
-#define DEFAULT_BULLET_SPEED 4
-#define DEFAULT_BULLET_SIZE 10
-#define PLAYER_SIZE 45
-
-#define DIFFICULTY_INCREASE_TIME 10000 //in ms
-#define UPGRADE_TRESHOLD 1500
-#define UPGRADE_INCREMENT 5
-
-#define ENEMY_MAX_SIZE 100
-#define ENEMY_MIN_SIZE 60
-#define ENEMY_MIN_SPEED 1
-#define ENEMY_SPAWN_RATE 50
-
-#define BTN_HEIGHT 50
-#define BTN_WIDTH 100
-#define ID_BTN_START 999
-#define ID_BTN_UPGRADE_BULLET_SIZE 998
-#define ID_BTN_UPGRADE_BULLET_SPEED 997
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -43,10 +20,6 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
-typedef struct sPoint {
-	float x, y;
-} TPoint;
-
 TPoint point(float x, float y) {
 	TPoint pt;
 	pt.x = x;
@@ -54,22 +27,6 @@ TPoint point(float x, float y) {
 
 	return pt;
 }
-
-typedef struct SObject {
-	TPoint pos;
-	TPoint size;
-	COLORREF brush;
-	TPoint speed;
-	char oType;
-	BOOL isDel;
-} TObject, * PObject;
-
-enum gameState {
-	RUNNING = 0,
-	PAUSE = 1,
-	END = 2,
-	UPGRADING = 3
-};
 
 // Declarations
 RECT windowRct = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
@@ -270,13 +227,6 @@ void loadBitmap(HDC dc, HDC* imageDc, LPCSTR bmpPath) {
 void loadImageBitmaps(HDC dc) {
 	loadBitmap(dc, &backgroundDC, L"bg-desert.bmp");
 	loadBitmap(dc, &spaceShipDC, L"player-spaceship.bmp");
-	/*	backgroundDC = CreateCompatibleDC(dc);
-		backgroundBitmap = (HBITMAP)LoadImageW(NULL, L"bg-desert.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-		SelectObject(backgroundDC, backgroundBitmap);
-
-		spaceShipDC = CreateCompatibleDC(dc);
-		spaceShipBitmap = (HBITMAP)LoadImageW(NULL, L"player-spaceship.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-		SelectObject(spaceShipDC, spaceShipBitmap)*/;
 }
 
 void upgradePlayer() {
@@ -350,8 +300,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	// TODO: Place code here.
-
 	// Initialize global strings
 	LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 	LoadStringW(hInstance, IDC_SPACEINVADERS, szWindowClass, MAX_LOADSTRING);
@@ -385,9 +333,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		else
 		{
-			if (GetKeyState(VK_ESCAPE) < 0) {
-				isGameRunning = FALSE;
-			}
 			switch (gGameState)
 			{
 			case UPGRADING:
@@ -512,13 +457,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 		case ID_BTN_UPGRADE_BULLET_SIZE:
 			gBulletSize += UPGRADE_INCREMENT;
-			// TODO: better destroying algo
 			destroyUpgradeButtons();
 			gGameState = RUNNING;
 			break;
 		case ID_BTN_UPGRADE_BULLET_SPEED:
 			gBulletSpeed += UPGRADE_INCREMENT;
-			// TODO: better destroying algo
 			destroyUpgradeButtons();
 			gGameState = RUNNING;
 			break;
@@ -546,6 +489,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// 32 == SPACE
 		if (wParam == 32) {
 			addBullet(player.pos.x, player.pos.y);
+		}
+		// 27 == ESC
+		else if (wParam == 27) {
+			isGameRunning = FALSE;
 		}
 		break;
 	case WM_TIMER:
