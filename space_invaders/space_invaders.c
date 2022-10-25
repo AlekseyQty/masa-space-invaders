@@ -18,14 +18,18 @@
 #define PLAYER_SIZE 45
 
 #define DIFFICULTY_INCREASE_TIME 10000 //in ms
-#define UPGRADE_TRESHOLD 3000
+#define UPGRADE_TRESHOLD 100
 
 #define ENEMY_MAX_SIZE 100
 #define ENEMY_MIN_SIZE 60
 #define ENEMY_MIN_SPEED 1
 #define ENEMY_SPAWN_RATE 50
 
-#define ID_BTN 999
+#define BTN_HEIGHT 50
+#define BTN_WIDTH 100
+#define ID_BTN_START 999
+#define ID_BTN_UPGRADE_BULLET_SIZE 998
+#define ID_BTN_UPGRADE_BULLET_SPEED 997
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -59,13 +63,20 @@ typedef struct SObject {
 	BOOL isDel;
 } TObject, *PObject;
 
+enum gameState {
+	RUNNING = 0,
+	PAUSE = 1,
+	END = 2
+};
+
 // Declarations
 RECT windowRct = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
 HWND btnRestart = NULL;
+HWND btnUpgradeBulletSize = NULL;
+HWND btnUpgradeBulletSpeed = NULL;
 TObject player;
 PObject objectsArray = NULL;
 BOOL isGameRunning = TRUE;
-BOOL isPause = TRUE;
 BOOL isStartMenu = TRUE;
 BOOL needNewGame = FALSE;
 BOOL upgradeInProgress = FALSE;
@@ -80,7 +91,7 @@ int gEnemySpeed;
 int gBulletSize;
 int gBulletSpeed;
 int gPlayerSpeed;
-
+enum gameState gGameState = PAUSE;
 
 
 // Functionds
@@ -141,7 +152,7 @@ void moveObjects(TObject* obj) {
 
 	if (obj->oType == 'e' && (obj->pos.y > WINDOW_HEIGHT + ENEMY_MAX_SIZE + 10)) {
 		obj->isDel = TRUE;
-		isPause = TRUE;
+		gGameState = PAUSE;
 	}
 	if (obj->oType == 'b' && obj->pos.y < -150) {
 		obj->isDel = TRUE;
@@ -241,7 +252,7 @@ void winMove() {
 	for (int i = 0; i < objectCount; i++) {
 		moveObjects(objectsArray + i);
 		if (objectsArray[i].oType == 'e' && objectCollision(player, objectsArray[i])) {
-			isPause = TRUE;
+			gGameState = PAUSE;
 		}
 	}
 
@@ -299,8 +310,8 @@ void updateWindow(HDC dc) {
 	DeleteObject(gameWindowBitmap);
 }
 
-void createStartButton(HWND hwnd, HWND *btnRestart) {
-	if (!(*btnRestart)) {
+void createStartButton(HWND hwnd) {
+	if (!btnRestart) {
 		LPCSTR btnName = L"";
 
 		if (isStartMenu) {
@@ -311,11 +322,15 @@ void createStartButton(HWND hwnd, HWND *btnRestart) {
 			btnName = L"Restart";
 		}
 
-		*btnRestart = CreateWindowW(L"Button", btnName, WS_VISIBLE | WS_CHILD, WINDOW_WIDTH / 2 - 100 / 2, WINDOW_HEIGHT / 2 - 50 / 2, 100, 50, hwnd, ID_BTN, NULL, NULL);
+		btnRestart = CreateWindowW(L"Button", btnName, WS_VISIBLE | WS_CHILD, WINDOW_WIDTH / 2 - BTN_WIDTH/2, WINDOW_HEIGHT/2 - BTN_HEIGHT/2, BTN_WIDTH, BTN_HEIGHT, hwnd, ID_BTN_START, NULL, NULL);
 	}
 }
 
-HWND createUpgradeButton(HWND hwnd) {
+void createUpgradeButton(HWND hwnd) {
+	if (!btnUpgradeBulletSize && !btnUpgradeBulletSpeed) {
+		btnUpgradeBulletSize = CreateWindowW(L"Button", L"Bullet size", WS_VISIBLE | WS_CHILD, WINDOW_WIDTH/2 - BTN_WIDTH - 10, WINDOW_HEIGHT/2 - BTN_HEIGHT/2, BTN_WIDTH, BTN_HEIGHT, hwnd, ID_BTN_UPGRADE_BULLET_SIZE, NULL, NULL);
+		btnUpgradeBulletSpeed = CreateWindowW(L"Button", L"Bullet speed", WS_VISIBLE | WS_CHILD, WINDOW_WIDTH/2 + 10, WINDOW_HEIGHT/2 - BTN_HEIGHT/2, BTN_WIDTH, BTN_HEIGHT, hwnd, ID_BTN_UPGRADE_BULLET_SPEED, NULL, NULL);
+	}
 	//TODO: Make upgrade btns
 }
 
@@ -366,25 +381,28 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			if (GetKeyState(VK_ESCAPE) < 0) {
 				isGameRunning = FALSE;
 			}
-			if (isPause) {
-				// Do not recreate button if its already created
-				if (!btnRestart) {
+			switch (gGameState)
+			{
+			case PAUSE:
+					// Do not recreate button if its already created
+					if (!btnRestart) {
+						updateWindow(dc);
+					}
+					//createUpgradeButton(hWnd);
+					createStartButton(hWnd);
+					Sleep(5);
+					break;
+			case RUNNING:
+					if (needNewGame) {
+						gameInit(hWnd);
+					}
+					winMove();
+					upgradePlayer();
 					updateWindow(dc);
-				}
-				createStartButton(hWnd, &btnRestart);
-				Sleep(5);
-			}
-			else {
-				if (needNewGame) {
-					gameInit(hWnd);
-				}
-				winMove();
-				upgradePlayer();
-				updateWindow(dc);
-				Sleep(5);
+					Sleep(5);
+					break;
 			}
 		}
-
 	}
 	return (int)msg.wParam;
 }
@@ -475,9 +493,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
 			break;
-		case ID_BTN:
+		case ID_BTN_START:
 			needNewGame = TRUE;
-			isPause = FALSE;
+			gGameState = RUNNING;
 			if (btnRestart) DestroyWindow(btnRestart);
 			break;
 		default:
