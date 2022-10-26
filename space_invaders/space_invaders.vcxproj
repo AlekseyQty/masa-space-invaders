@@ -134,7 +134,7 @@
     <ClInclude Include="types.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="comet_catcher.c" />
+    <ClCompile Include="star_dust.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="space_invaders.rc" />

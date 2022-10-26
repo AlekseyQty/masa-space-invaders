@@ -32,7 +32,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="comet_catcher.c">
+    <ClCompile Include="star_dust.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
