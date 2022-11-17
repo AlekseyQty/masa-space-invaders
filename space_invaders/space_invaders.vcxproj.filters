@@ -30,9 +30,21 @@
     <ClInclude Include="types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="game.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="star_dust.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="game.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="config.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

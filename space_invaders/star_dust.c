@@ -8,6 +8,7 @@
 #include "configurations.h"
 #include "types.h"
 
+#include "config.h"
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -155,24 +156,25 @@ void addBullet(float xPos, float yPos) {
 	initObject(obj, xPos + (player.size.x / 2 - gBulletSize / 2), yPos, gBulletSize, gBulletSize, 'b', point(0, -gBulletSpeed));
 }
 
-void createEnemy() {
+void createEnemy(TConfig* gameConfig) {
 	// Random range formula: num = (rand() % (upper – lower + 1)) + lower 
-	float enemySpeed = (rand() % (gEnemySpeed - ENEMY_MIN_SPEED + 1)) + ENEMY_MIN_SPEED;
+	float enemySpeed = (rand() % (gameConfig->enemySpeed - ENEMY_MIN_SPEED + 1)) + ENEMY_MIN_SPEED;
 	float enemyWidth = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
 	//float enemyHeight = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
 	float startLocation = (rand() % (WINDOW_WIDTH - (int)enemyWidth + 1));
 	initObject(newObject(), startLocation, -100, enemyWidth, enemyWidth, 'e', point(0, enemySpeed));
 }
 
-void generateEnemy() {
+void generateEnemy(TConfig* gameConfig) {
 	int spawnRate = rand() % ENEMY_SPAWN_RATE;
 
 	if (spawnRate == 1) {
-		createEnemy();
+		createEnemy(gameConfig);
 	}
 }
 
-void gameInit(HWND hWnd) {
+TConfig gameInit(HWND hWnd) {
+	TConfig gameConfig = gameConfigInit(&hWnd);
 	gEnemySpeed = DEFAULT_ENEMY_SPEED;
 	gPlayerSpeed = DEFAULT_PLAYER_SPEED;
 	gBulletSize = DEFAULT_BULLET_SIZE;
@@ -186,17 +188,17 @@ void gameInit(HWND hWnd) {
 	SetTimer(hWnd, 1, DIFFICULTY_INCREASE_TIME, (TIMERPROC)NULL);
 	realloc(objectsArray, 0);
 	initObject(&player, WINDOW_WIDTH / 2 - PLAYER_SIZE / 2, WINDOW_HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE, 'p', point(0, 0));
+	return gameConfig;
 }
 
-void playerControl() {
+void playerControl(TConfig* gameConfig) {
 	player.speed.x = 0;
 	player.speed.y = 0;
 
 	//if (GetAsyncKeyState('W') < 0) player.speed.y -= PLAYER_SPEED;
 	//if (GetAsyncKeyState('S') < 0) player.speed.y = PLAYER_SPEED;
-	if (GetAsyncKeyState('A') < 0) player.speed.x -= gPlayerSpeed;
-	if (GetAsyncKeyState('D') < 0) player.speed.x = gPlayerSpeed;
-
+	if (GetAsyncKeyState('A') < 0) player.speed.x -= gameConfig->playerSpeed;
+	if (GetAsyncKeyState('D') < 0) player.speed.x = gameConfig->playerSpeed;
 
 	// Code for moving diagonal
 	//if ((player.speed.x != 0) && (player.speed.y != 0)) {
@@ -204,10 +206,10 @@ void playerControl() {
 	//}
 }
 
-void winMove() {
-	playerControl();
+void winMove(TConfig* gameConfig) {
+	playerControl(gameConfig);
 	movePlayer(&player);
-	generateEnemy();
+	generateEnemy(gameConfig);
 	for (int i = 0; i < objectCount; i++) {
 		moveObjects(objectsArray + i);
 		if (objectsArray[i].oType == 'e' && objectCollision(player, objectsArray[i])) {
@@ -320,7 +322,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 	// Main message loop:
-	gameInit(hWnd);
+	TConfig gameConfig = gameInit(hWnd);
 	loadImageBitmaps(dc);
 
 	while (isGameRunning)
@@ -353,7 +355,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				if (needNewGame) {
 					gameInit(hWnd);
 				}
-				winMove();
+				winMove(&gameConfig);
 				upgradePlayer();
 				updateWindow(dc);
 				Sleep(5);
