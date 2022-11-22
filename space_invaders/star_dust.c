@@ -9,6 +9,7 @@
 #include "types.h"
 #include "configuration.h"
 #include "object.h"
+#include "player.h"
 
 
 // Forward declarations of functions included in this code module:
@@ -28,14 +29,6 @@ TVariablesConfig gVariablesConfig;
 
 // Functionds
 
-void movePlayer(TObject* obj) {
-	obj->pos.x += obj->speed.x;
-	//obj->pos.y += obj->speed.y;
-	if (obj->pos.x <= 0) obj->pos.x = 0;
-	if (obj->pos.x + obj->size.x >= WINDOW_WIDTH) obj->pos.x = WINDOW_WIDTH - obj->size.x;
-	//if (obj->pos.y <= 0) obj->pos.y = 0;
-	//if (obj->pos.y + obj->size.y >= WINDOW_HEIGHT) obj->pos.y = WINDOW_HEIGHT - obj->size.y;
-}
 
 void addBullet(float xPos, float yPos) {
 	PObject obj = newObject(&gGameConfig);
@@ -77,25 +70,8 @@ void gameInit(HWND hWnd) {
 	realloc(gGameConfig.objectsArray, 0);
 	initObject(&gGameConfig.player, WINDOW_WIDTH / 2 - PLAYER_SIZE / 2, WINDOW_HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE, 'p', point(0, 0));
 }
-
-void playerControl() {
-	gGameConfig.player.speed.x = 0;
-	gGameConfig.player.speed.y = 0;
-
-	//if (GetAsyncKeyState('W') < 0) player.speed.y -= PLAYER_SPEED;
-	//if (GetAsyncKeyState('S') < 0) player.speed.y = PLAYER_SPEED;
-	if (GetAsyncKeyState('A') < 0) gGameConfig.player.speed.x -= gVariablesConfig.playerSpeed;
-	if (GetAsyncKeyState('D') < 0) gGameConfig.player.speed.x = gVariablesConfig.playerSpeed;
-
-
-	// Code for moving diagonal
-	//if ((player.speed.x != 0) && (player.speed.y != 0)) {
-	//	player.speed = point(player.speed.x * 0.7, player.speed.y = player.speed.y * 0.7);
-	//}
-}
-
 void winMove() {
-	playerControl();
+	playerControl(&gGameConfig, &gVariablesConfig);
 	movePlayer(&gGameConfig.player);
 	generateEnemy();
 	for (int i = 0; i < gGameConfig.objectCount; i++) {

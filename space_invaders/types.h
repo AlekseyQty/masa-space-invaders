@@ -1,4 +1,7 @@
 #pragma once
+
+#include "framework.h"
+
 typedef struct sPoint {
 	float x, y;
 } TPoint;
