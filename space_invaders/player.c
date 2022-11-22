@@ -19,3 +19,17 @@ void addBullet(float xPos, float yPos, TGameConfig* gGameConfig, TVariablesConfi
 	PObject obj = newObject(gGameConfig);
 	initObject(obj, xPos + (gGameConfig->player.size.x / 2 - gVariablesConfig->bulletSize / 2), yPos, gVariablesConfig->bulletSize, gVariablesConfig->bulletSize, 'b', point(0, -gVariablesConfig->bulletSpeed));
 }
+
+
+void upgradePlayer(TGameConfig* gGameConfig) {
+	if (gGameConfig->score % UPGRADE_TRESHOLD == 0 && !gGameConfig->upgradeInProgress && gGameConfig->score != 0) {
+		gGameConfig->gameState = UPGRADING;
+		gGameConfig->upgradeInProgress = TRUE;
+	}
+
+	else if (gGameConfig->upgradeInProgress) {
+		if (gGameConfig->score % UPGRADE_TRESHOLD != 0) {
+			gGameConfig->upgradeInProgress = FALSE;
+		}
+	}
+}

@@ -27,100 +27,6 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 TGameConfig gGameConfig;
 TVariablesConfig gVariablesConfig;
 
-void gameInit(HWND hWnd) {
-	//gGameConfig = initializeGameConfig();
-	//gVariablesConfig = initializeVariableConfig();
-
-	gVariablesConfig.enemySpeed = DEFAULT_ENEMY_SPEED;
-	gVariablesConfig.playerSpeed = DEFAULT_PLAYER_SPEED;
-	gVariablesConfig.bulletSize = DEFAULT_BULLET_SIZE;
-	gVariablesConfig.bulletSpeed = DEFAULT_BULLET_SPEED;
-	gGameConfig.needNewGame = FALSE;
-	gGameConfig.objectsArray = NULL;
-	gGameConfig.objectCount = 0;
-	KillTimer(hWnd, 1);
-	gGameConfig.btnRestart = NULL;
-	gGameConfig.score = 0;
-	SetTimer(hWnd, 1, DIFFICULTY_INCREASE_TIME, (TIMERPROC)NULL);
-	realloc(gGameConfig.objectsArray, 0);
-	initObject(&gGameConfig.player, WINDOW_WIDTH / 2 - PLAYER_SIZE / 2, WINDOW_HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE, 'p', point(0, 0));
-}
-
-
-void loadBitmap(HDC dc, HDC* imageDc, LPCSTR bmpPath) {
-	*imageDc = CreateCompatibleDC(dc);
-	HBITMAP imageBitmap = (HBITMAP)LoadImageW(NULL, bmpPath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-	SelectObject(*imageDc, imageBitmap);
-}
-
-void loadImageBitmaps(HDC dc) {
-	loadBitmap(dc, &gGameConfig.backgroundDC, L"bg-desert.bmp");
-	loadBitmap(dc, &gGameConfig.spaceShipDC, L"player-spaceship.bmp");
-}
-
-void upgradePlayer() {
-	if (gGameConfig.score % UPGRADE_TRESHOLD == 0 && !gGameConfig.upgradeInProgress && gGameConfig.score != 0) {
-		gGameConfig.gameState = UPGRADING;
-		gGameConfig.upgradeInProgress = TRUE;
-	}
-
-	else if (gGameConfig.upgradeInProgress) {
-		if (gGameConfig.score % UPGRADE_TRESHOLD != 0) {
-			gGameConfig.upgradeInProgress = FALSE;
-		}
-	}
-}
-
-void updateWindow(HDC dc) {
-	HDC memDC = CreateCompatibleDC(dc);
-	HBITMAP gameWindowBitmap = CreateCompatibleBitmap(dc, gGameConfig.windowRct.right - gGameConfig.windowRct.left, gGameConfig.windowRct.bottom - gGameConfig.windowRct.top);
-	SelectObject(memDC, gameWindowBitmap);
-
-	BitBlt(memDC, 0, 0, gGameConfig.windowRct.right - gGameConfig.windowRct.left, gGameConfig.windowRct.bottom - gGameConfig.windowRct.top, gGameConfig.backgroundDC, 0, 0, SRCCOPY);
-
-	showObject(gGameConfig.player, memDC, &gGameConfig);
-
-	for (int i = 0; i < gGameConfig.objectCount; i++) {
-		showObject(gGameConfig.objectsArray[i], memDC, &gGameConfig);
-	}
-
-	// Copy from Memory Device Context to Device Context
-	BitBlt(dc, 0, 0, gGameConfig.windowRct.right - gGameConfig.windowRct.left, gGameConfig.windowRct.bottom - gGameConfig.windowRct.top, memDC, 0, 0, SRCCOPY);
-
-	DeleteDC(memDC);
-	DeleteObject(gameWindowBitmap);
-}
-
-void createStartButton(HWND hwnd) {
-	if (!gGameConfig.btnRestart) {
-		LPCSTR btnName = L"";
-
-		if (gGameConfig.isStartMenu) {
-			btnName = L"Start";
-			gGameConfig.isStartMenu = FALSE;
-		}
-		else {
-			btnName = L"Restart";
-		}
-
-		gGameConfig.btnRestart = CreateWindowW(L"Button", btnName, WS_VISIBLE | WS_CHILD, WINDOW_WIDTH / 2 - BTN_WIDTH / 2, WINDOW_HEIGHT / 2 - BTN_HEIGHT / 2, BTN_WIDTH, BTN_HEIGHT, hwnd, ID_BTN_START, NULL, NULL);
-	}
-}
-
-void createUpgradeButton(HWND hwnd) {
-	if (!gGameConfig.btnUpgradeBulletSize && !gGameConfig.btnUpgradeBulletSpeed) {
-		gGameConfig.btnUpgradeBulletSize = CreateWindowW(L"Button", L"Bullet size", WS_VISIBLE | WS_CHILD, WINDOW_WIDTH / 2 - BTN_WIDTH - 10, WINDOW_HEIGHT / 2 - BTN_HEIGHT / 2, BTN_WIDTH, BTN_HEIGHT, hwnd, ID_BTN_UPGRADE_BULLET_SIZE, NULL, NULL);
-		gGameConfig.btnUpgradeBulletSpeed = CreateWindowW(L"Button", L"Bullet speed", WS_VISIBLE | WS_CHILD, WINDOW_WIDTH / 2 + 10, WINDOW_HEIGHT / 2 - BTN_HEIGHT / 2, BTN_WIDTH, BTN_HEIGHT, hwnd, ID_BTN_UPGRADE_BULLET_SPEED, NULL, NULL);
-	}
-}
-
-void destroyUpgradeButtons() {
-	if (gGameConfig.btnUpgradeBulletSize) DestroyWindow(gGameConfig.btnUpgradeBulletSize);
-	if (gGameConfig.btnUpgradeBulletSpeed) DestroyWindow(gGameConfig.btnUpgradeBulletSpeed);
-	gGameConfig.btnUpgradeBulletSize = NULL;
-	gGameConfig.btnUpgradeBulletSpeed = NULL;
-}
-
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
@@ -142,7 +48,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	{
 		return FALSE;
 	}
-	gameInit(hWnd);
+	gameInit(hWnd, &gGameConfig, &gVariablesConfig);
 	HDC dc = GetDC(hWnd);
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_SPACEINVADERS));
 	MSG msg;
@@ -150,7 +56,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	// Main message loop:
 	
-	loadImageBitmaps(dc);
+	loadImageBitmaps(dc, &gGameConfig);
 
 	while (gGameConfig.isGameRunning)
 	{
@@ -166,25 +72,25 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			{
 			case UPGRADING:
 				if (!gGameConfig.btnUpgradeBulletSize && !gGameConfig.btnUpgradeBulletSpeed) {
-					updateWindow(dc);
+					updateWindow(dc, &gGameConfig);
 				}
-				createUpgradeButton(hWnd);
+				createUpgradeButton(hWnd, &gGameConfig);
 				Sleep(5);
 				break;
 			case END:
 				if (!gGameConfig.btnRestart) {
-					updateWindow(dc);
+					updateWindow(dc, &gGameConfig);
 				}
-				createStartButton(hWnd);
+				createStartButton(hWnd, &gGameConfig);
 				Sleep(5);
 				break;
 			case RUNNING:
 				if (gGameConfig.needNewGame) {
-					gameInit(hWnd);
+					gameInit(hWnd, &gGameConfig, &gVariablesConfig);
 				}
 				winMove(&gGameConfig, &gVariablesConfig);
-				upgradePlayer();
-				updateWindow(dc);
+				upgradePlayer(&gGameConfig);
+				updateWindow(dc, &gGameConfig);
 				Sleep(5);
 				break;
 			}
@@ -288,12 +194,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 		case ID_BTN_UPGRADE_BULLET_SIZE:
 			gVariablesConfig.bulletSize += UPGRADE_INCREMENT;
-			destroyUpgradeButtons();
+			destroyUpgradeButtons(&gGameConfig);
 			gGameConfig.gameState = RUNNING;
 			break;
 		case ID_BTN_UPGRADE_BULLET_SPEED:
 			gVariablesConfig.bulletSpeed += UPGRADE_INCREMENT;
-			destroyUpgradeButtons();
+			destroyUpgradeButtons(&gGameConfig);
 			gGameConfig.gameState = RUNNING;
 			break;
 		default:
