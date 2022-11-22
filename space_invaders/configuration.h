@@ -16,13 +16,11 @@ typedef struct SGameConfig {
 	BOOL needNewGame;
 	BOOL upgradeInProgress;
 	HDC backgroundDC;
-	HBITMAP backgroundBitmap;
 	HDC spaceShipDC;
-	HBITMAP spaceShipBitmap;
 	enum gameState gameState;
 	int objectCount;
 	int score;
-} tGameConfig;
+} TGameConfig;
 
 typedef struct SVariablesConfig {
 	int enemySpeed;
@@ -32,3 +30,5 @@ typedef struct SVariablesConfig {
 } TVariablesConfig;
 
 
+TGameConfig initializeGameConfig();
+TVariablesConfig initializeVariableConfig();

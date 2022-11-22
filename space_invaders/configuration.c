@@ -1,7 +1,7 @@
 #include "configuration.h"
 
-tGameConfig initializeGameConfig() {
-	tGameConfig gameConfig;
+TGameConfig initializeGameConfig() {
+	TGameConfig gameConfig;
 	RECT initRect = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
 
 	gameConfig.windowRct = initRect;
@@ -15,9 +15,7 @@ tGameConfig initializeGameConfig() {
 	gameConfig.needNewGame = FALSE;
 	gameConfig.upgradeInProgress = FALSE;
 	gameConfig.backgroundDC = NULL;
-	gameConfig.backgroundBitmap = NULL;
 	gameConfig.spaceShipDC = NULL;
-	gameConfig.spaceShipBitmap = NULL;
 	gameConfig.gameState = END;
 	gameConfig.score = 0;
 	gameConfig.objectCount = 0;
@@ -35,3 +33,5 @@ TVariablesConfig initializeVariableConfig() {
 
 	return variableConfig;
 }
+
+
