@@ -1,0 +1,9 @@
+Refactoring process:
+
+Change game architecture from single file with multiple functions and variables to several files, each of which contains the implementation of a separate element of the game.
+
+All separate files include header file with declarations and .c file with implementation. 
+
+Also, there is a static.h file with configurations for the game.
+
+As a result of refactoring main game file shrinked from 600+ lines to 250. Also it is much easier to navigate through code and maintain it.
