@@ -128,6 +128,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="configuration.h" />
+    <ClInclude Include="core.h" />
+    <ClInclude Include="enemy.h" />
     <ClInclude Include="object.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="score.h" />
@@ -139,6 +141,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="configuration.c" />
+    <ClCompile Include="core.c" />
+    <ClCompile Include="enemy.c" />
     <ClCompile Include="object.c" />
     <ClCompile Include="player.c" />
     <ClCompile Include="score.c" />

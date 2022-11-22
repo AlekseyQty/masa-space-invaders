@@ -10,7 +10,8 @@
 #include "configuration.h"
 #include "object.h"
 #include "player.h"
-
+#include "enemy.h"
+#include "core.h"
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -23,34 +24,8 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
-
 TGameConfig gGameConfig;
 TVariablesConfig gVariablesConfig;
-
-// Functionds
-
-
-void addBullet(float xPos, float yPos) {
-	PObject obj = newObject(&gGameConfig);
-	initObject(obj, xPos + (gGameConfig.player.size.x / 2 - gVariablesConfig.bulletSize / 2), yPos, gVariablesConfig.bulletSize, gVariablesConfig.bulletSize, 'b', point(0, - gVariablesConfig.bulletSpeed));
-}
-
-void createEnemy() {
-	// Random range formula: num = (rand() % (upper – lower + 1)) + lower 
-	float enemySpeed = (rand() % (gVariablesConfig.enemySpeed - ENEMY_MIN_SPEED + 1)) + ENEMY_MIN_SPEED;
-	float enemyWidth = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
-	//float enemyHeight = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
-	float startLocation = (rand() % (WINDOW_WIDTH - (int)enemyWidth + 1));
-	initObject(newObject(&gGameConfig), startLocation, -100, enemyWidth, enemyWidth, 'e', point(0, enemySpeed));
-}
-
-void generateEnemy() {
-	int spawnRate = rand() % ENEMY_SPAWN_RATE;
-
-	if (spawnRate == 1) {
-		createEnemy();
-	}
-}
 
 void gameInit(HWND hWnd) {
 	//gGameConfig = initializeGameConfig();
@@ -70,19 +45,7 @@ void gameInit(HWND hWnd) {
 	realloc(gGameConfig.objectsArray, 0);
 	initObject(&gGameConfig.player, WINDOW_WIDTH / 2 - PLAYER_SIZE / 2, WINDOW_HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE, 'p', point(0, 0));
 }
-void winMove() {
-	playerControl(&gGameConfig, &gVariablesConfig);
-	movePlayer(&gGameConfig.player);
-	generateEnemy();
-	for (int i = 0; i < gGameConfig.objectCount; i++) {
-		moveObjects(gGameConfig.objectsArray + i, &gGameConfig);
-		if (gGameConfig.objectsArray[i].oType == 'e' && objectCollision(gGameConfig.player, gGameConfig.objectsArray[i])) {
-			gGameConfig.gameState = END;
-		}
-	}
 
-	delObjects(&gGameConfig);
-}
 
 void loadBitmap(HDC dc, HDC* imageDc, LPCSTR bmpPath) {
 	*imageDc = CreateCompatibleDC(dc);
@@ -219,7 +182,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				if (gGameConfig.needNewGame) {
 					gameInit(hWnd);
 				}
-				winMove();
+				winMove(&gGameConfig, &gVariablesConfig);
 				upgradePlayer();
 				updateWindow(dc);
 				Sleep(5);
@@ -356,7 +319,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_KEYUP:
 		// 32 == SPACE
 		if (wParam == 32) {
-			addBullet(gGameConfig.player.pos.x, gGameConfig.player.pos.y);
+			addBullet(gGameConfig.player.pos.x, gGameConfig.player.pos.y, &gGameConfig, &gVariablesConfig);
 		}
 		// 27 == ESC
 		else if (wParam == 27) {

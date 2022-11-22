@@ -14,3 +14,8 @@ void playerControl(TGameConfig* gGameConfig, TVariablesConfig* gVariablesConfig)
 	if (GetAsyncKeyState('A') < 0) gGameConfig->player.speed.x -= gVariablesConfig->playerSpeed;
 	if (GetAsyncKeyState('D') < 0) gGameConfig->player.speed.x = gVariablesConfig->playerSpeed;
 }
+
+void addBullet(float xPos, float yPos, TGameConfig* gGameConfig, TVariablesConfig* gVariablesConfig) {
+	PObject obj = newObject(gGameConfig);
+	initObject(obj, xPos + (gGameConfig->player.size.x / 2 - gVariablesConfig->bulletSize / 2), yPos, gVariablesConfig->bulletSize, gVariablesConfig->bulletSize, 'b', point(0, -gVariablesConfig->bulletSpeed));
+}
