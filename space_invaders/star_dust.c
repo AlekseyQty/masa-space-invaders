@@ -5,7 +5,7 @@
 #include "resource.h"
 #include <stdio.h>
 #include <time.h>
-#include "configurations.h"
+#include "static.h"
 #include "types.h"
 
 

@@ -127,13 +127,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="configurations.h" />
+    <ClInclude Include="configuration.h" />
+    <ClInclude Include="static.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="configuration.c" />
     <ClCompile Include="star_dust.c" />
   </ItemGroup>
   <ItemGroup>
