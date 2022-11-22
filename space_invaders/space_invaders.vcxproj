@@ -128,6 +128,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="configuration.h" />
+    <ClInclude Include="object.h" />
+    <ClInclude Include="score.h" />
     <ClInclude Include="static.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
@@ -136,6 +138,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="configuration.c" />
+    <ClCompile Include="object.c" />
+    <ClCompile Include="score.c" />
     <ClCompile Include="star_dust.c" />
   </ItemGroup>
   <ItemGroup>

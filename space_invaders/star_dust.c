@@ -3,11 +3,12 @@
 
 #include "framework.h"
 #include "resource.h"
-#include <stdio.h>
+
 #include <time.h>
 #include "static.h"
 #include "types.h"
 #include "configuration.h"
+#include "object.h"
 
 
 // Forward declarations of functions included in this code module:
@@ -21,61 +22,11 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
-TPoint point(float x, float y) {
-	TPoint pt;
-	pt.x = x;
-	pt.y = y;
-
-	return pt;
-}
-
 
 TGameConfig gGameConfig;
 TVariablesConfig gVariablesConfig;
 
 // Functionds
-
-BOOL objectCollision(TObject o1, TObject o2) {
-	return ((o1.pos.x + o1.size.x) > o2.pos.x) && (o1.pos.x < (o2.pos.x + o2.size.x)) &&
-		((o1.pos.y + o1.size.y) > o2.pos.y) && (o1.pos.y < (o2.pos.y + o2.size.y));
-}
-
-void initObject(TObject* obj, float xPos, float yPos, float width, float height, char objType, TPoint speed) {
-	obj->pos = point(xPos, yPos);
-	obj->size = point(width, height);
-	obj->speed = speed;
-	obj->oType = objType;
-	if (objType == 'p') obj->brush = RGB(0, 255, 0);
-	if (objType == 'e') obj->brush = RGB(230, 40, 40);
-	if (objType == 'b') obj->brush = RGB(146, 255, 230);
-	obj->isDel = FALSE;
-}
-
-void showScore(HDC dc) {
-	// Update score
-	char output[100];
-	snprintf(output, 100, "Score: %d", gGameConfig.score);
-	SetTextColor(dc, RGB(255, 255, 255));
-	SetBkMode(dc, TRANSPARENT);
-	TextOutA(dc, 50, 20, output, lstrlenA(output));
-}
-
-void showObject(TObject obj, HDC dc) {
-	SelectObject(dc, GetStockObject(DC_PEN));
-	SetDCPenColor(dc, RGB(0, 0, 0));
-	SelectObject(dc, GetStockObject(DC_BRUSH));
-	SetDCBrushColor(dc, obj.brush);
-
-	showScore(dc);
-
-	if (obj.oType == 'e' || obj.oType == 'b') {
-		Ellipse(dc, (int)(obj.pos.x), (int)(obj.pos.y), (int)(obj.pos.x + obj.size.x), (int)(obj.pos.y + obj.size.y));
-	}
-
-	else if (obj.oType == 'p') {
-		BitBlt(dc, (int)(obj.pos.x), (int)(obj.pos.y), 100, obj.size.x, gGameConfig.spaceShipDC, 0, 0, SRCCOPY);
-	}
-}
 
 void movePlayer(TObject* obj) {
 	obj->pos.x += obj->speed.x;
@@ -86,52 +37,8 @@ void movePlayer(TObject* obj) {
 	//if (obj->pos.y + obj->size.y >= WINDOW_HEIGHT) obj->pos.y = WINDOW_HEIGHT - obj->size.y;
 }
 
-void moveObjects(TObject* obj) {
-	obj->pos.y += obj->speed.y;
-
-	if (obj->oType == 'e' && (obj->pos.y > WINDOW_HEIGHT + ENEMY_MAX_SIZE + 10)) {
-		obj->isDel = TRUE;
-		gGameConfig.gameState = END;
-	}
-	if (obj->oType == 'b' && obj->pos.y < -150) {
-		obj->isDel = TRUE;
-	}
-
-	if (obj->oType == 'b') {
-		for (int i = 0; i < gGameConfig.objectCount; i++) {
-			if ((gGameConfig.objectsArray[i].oType == 'e') && (objectCollision(*obj, gGameConfig.objectsArray[i]))) {
-				gGameConfig.objectsArray[i].isDel = TRUE;
-				obj->isDel = TRUE;
-				gGameConfig.score += 100;
-			}
-		}
-	}
-}
-
-
-PObject newObject() {
-	gGameConfig.objectCount++;
-	gGameConfig.objectsArray = realloc(gGameConfig.objectsArray, sizeof(*gGameConfig.objectsArray) * gGameConfig.objectCount);
-	return gGameConfig.objectsArray + gGameConfig.objectCount - 1;
-}
-
-void delObjects() {
-	int i = 0;
-	while (i < gGameConfig.objectCount)
-	{
-		if (gGameConfig.objectsArray[i].isDel) {
-			gGameConfig.objectCount--;
-			gGameConfig.objectsArray[i] = gGameConfig.objectsArray[gGameConfig.objectCount];
-			gGameConfig.objectsArray = realloc(gGameConfig.objectsArray, sizeof(*gGameConfig.objectsArray) * gGameConfig.objectCount);
-		}
-		else
-			i++;
-	}
-}
-
-
 void addBullet(float xPos, float yPos) {
-	PObject obj = newObject();
+	PObject obj = newObject(&gGameConfig);
 	initObject(obj, xPos + (gGameConfig.player.size.x / 2 - gVariablesConfig.bulletSize / 2), yPos, gVariablesConfig.bulletSize, gVariablesConfig.bulletSize, 'b', point(0, - gVariablesConfig.bulletSpeed));
 }
 
@@ -141,7 +48,7 @@ void createEnemy() {
 	float enemyWidth = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
 	//float enemyHeight = (rand() % (ENEMY_MAX_SIZE - ENEMY_MIN_SIZE + 1) + ENEMY_MIN_SIZE);
 	float startLocation = (rand() % (WINDOW_WIDTH - (int)enemyWidth + 1));
-	initObject(newObject(), startLocation, -100, enemyWidth, enemyWidth, 'e', point(0, enemySpeed));
+	initObject(newObject(&gGameConfig), startLocation, -100, enemyWidth, enemyWidth, 'e', point(0, enemySpeed));
 }
 
 void generateEnemy() {
@@ -192,13 +99,13 @@ void winMove() {
 	movePlayer(&gGameConfig.player);
 	generateEnemy();
 	for (int i = 0; i < gGameConfig.objectCount; i++) {
-		moveObjects(gGameConfig.objectsArray + i);
+		moveObjects(gGameConfig.objectsArray + i, &gGameConfig);
 		if (gGameConfig.objectsArray[i].oType == 'e' && objectCollision(gGameConfig.player, gGameConfig.objectsArray[i])) {
 			gGameConfig.gameState = END;
 		}
 	}
 
-	delObjects();
+	delObjects(&gGameConfig);
 }
 
 void loadBitmap(HDC dc, HDC* imageDc, LPCSTR bmpPath) {
@@ -232,10 +139,10 @@ void updateWindow(HDC dc) {
 
 	BitBlt(memDC, 0, 0, gGameConfig.windowRct.right - gGameConfig.windowRct.left, gGameConfig.windowRct.bottom - gGameConfig.windowRct.top, gGameConfig.backgroundDC, 0, 0, SRCCOPY);
 
-	showObject(gGameConfig.player, memDC);
+	showObject(gGameConfig.player, memDC, &gGameConfig);
 
 	for (int i = 0; i < gGameConfig.objectCount; i++) {
-		showObject(gGameConfig.objectsArray[i], memDC);
+		showObject(gGameConfig.objectsArray[i], memDC, &gGameConfig);
 	}
 
 	// Copy from Memory Device Context to Device Context
