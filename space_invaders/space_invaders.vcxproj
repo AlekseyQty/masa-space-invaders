@@ -127,13 +127,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="configurations.h" />
+    <ClInclude Include="configuration.h" />
+    <ClInclude Include="core.h" />
+    <ClInclude Include="enemy.h" />
+    <ClInclude Include="object.h" />
+    <ClInclude Include="player.h" />
+    <ClInclude Include="score.h" />
+    <ClInclude Include="static.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="configuration.c" />
+    <ClCompile Include="core.c" />
+    <ClCompile Include="enemy.c" />
+    <ClCompile Include="object.c" />
+    <ClCompile Include="player.c" />
+    <ClCompile Include="score.c" />
     <ClCompile Include="star_dust.c" />
   </ItemGroup>
   <ItemGroup>
