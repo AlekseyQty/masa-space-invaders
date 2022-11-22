@@ -10,4 +10,6 @@ Controls:
 * Shoot: SPACE
 * Exit: ESC
 
+Game trailer: https://drive.google.com/file/d/1-HlfbyCmt5H6_TyFsCIkZHhgQ_C8gHBr/view?usp=sharing
+
 More info: https://www.slideshare.net/AlekseyS4/start-dust-saratkin-alekseipptx
